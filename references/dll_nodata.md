@@ -1,4 +1,4 @@
-# dll_nodata — 双链表（无数据域）
+# dll_nodata — Doubly-Linked List (no data)
 
 **Header**: `dll_nodata_def.h`
 **Coq lib**: `dll_nodata_shape_lib`
@@ -27,6 +27,20 @@ dlistrep_shape(x, 0)
     dlistrep_shape(n2, n1)
 ```
 
+Full expansion (to NULL, k nodes):
+```
+dlistrep_shape(x, 0)
+  |-- data_at(field_addr(x, next), struct list*, n1) *
+      data_at(field_addr(x, prev), struct list*, 0) *
+      data_at(field_addr(n1, next), struct list*, n2) *
+      data_at(field_addr(n1, prev), struct list*, x) *
+      ...
+      data_at(field_addr(nk, next), struct list*, 0) *
+      data_at(field_addr(nk, prev), struct list*, n{k-1})
+// Each node appears once with its next+prev pointer values.
+// Last node nk: nk->next == 0 (end), nk->prev == n{k-1} (back-link intact).
+```
+
 ### dllseg_shape(x, xp, yp, y)
 DLL segment from `x` to `y` (y not included). x->prev = xp.
 
@@ -51,3 +65,16 @@ dllseg_shape(x, 0, yp, y)
 ```
 
 **Parameter order trap**: param 3 = last node IN segment, param 4 = endpoint marker (NOT in segment). Common error: swapping yp and y.
+
+Full expansion (x to y, with yp as last node before y):
+```
+dllseg_shape(x, 0, yp, y)
+  |-- data_at(field_addr(x, next), struct list*, n1) *
+      data_at(field_addr(x, prev), struct list*, 0) *
+      data_at(field_addr(n1, next), struct list*, n2) *
+      data_at(field_addr(n1, prev), struct list*, x) *
+      ...
+      data_at(field_addr(yp, next), struct list*, y) *
+      data_at(field_addr(yp, prev), struct list*, yp_prev)
+// Key: yp->next == y (end marker). y itself is NOT a data_at node.
+```

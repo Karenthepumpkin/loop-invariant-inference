@@ -1,4 +1,4 @@
-# sll_nodata — 单链表（无数据域）
+# sll_nodata — Singly-Linked List (no data)
 
 **Header**: `sll_nodata_def.h`
 **Coq lib**: `sll_nodata_shape_lib`
@@ -43,6 +43,15 @@ lseg(x, y) |-- exists n1 n2,
   data_at(field_addr(x, next), struct list*, n1) *
   data_at(field_addr(n1, next), struct list*, n2) *
   lseg(n2, y)
+```
+
+Full expansion (x to y):
+```
+lseg(x, y) |-- data_at(field_addr(x, next), struct list*, n1) *
+               data_at(field_addr(n1, next), struct list*, n2) *
+               ...
+               data_at(field_addr(nk, next), struct list*, y)
+// y is never inside the expanded segment. Stops when nk->next == y.
 ```
 
 Key: y is never inside the expanded segment. Stops when nk->next == y.

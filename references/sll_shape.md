@@ -1,4 +1,4 @@
-# sll_shape — 单链表（含数据域）
+# sll_shape — Singly-Linked List (with data)
 
 **Header**: `sll_shape_def.h`
 **Coq lib**: `sll_shape_lib`
@@ -47,6 +47,19 @@ lseg(x, y) |-- exists v1 n1 v2 n2,
   data_at(field_addr(n1, data), v2) *
   data_at(field_addr(n1, next), struct list*, n2) *
   lseg(n2, y)
+```
+
+Full expansion (x to y):
+```
+lseg(x, y) |-- data_at(field_addr(x, data), _) *
+               data_at(field_addr(x, next), struct list*, n1) *
+               data_at(field_addr(n1, data), _) *
+               data_at(field_addr(n1, next), struct list*, n2) *
+               ...
+               data_at(field_addr(nk, data), _) *
+               data_at(field_addr(nk, next), struct list*, y)
+// y is never inside the expanded segment. Stops when nk->next == y.
+// Each node contributes 2 data_at items (data + next).
 ```
 
 Key: y is never inside the expanded segment. Stops when nk->next == y.
