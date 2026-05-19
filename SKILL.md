@@ -1,6 +1,6 @@
 ---
 name: loop-invariant-inference
-description: Automatically infer loop invariants for C programs to support code verification and correctness proofs. Useful for analyzing loops to identify properties that hold throughout execution and to prove loop correctness, especially for cases involving complex data structures and intricate memory manipulation.Triggered when users request invariant inference, loop-property discovery, assertion generation, or loop verification.
+description: Automatically infer loop invariants for QCP form C programs to support code verification and correctness proofs. Useful for analyzing loops to identify properties that hold throughout execution and to prove loop correctness, especially for cases involving complex data structures and intricate memory manipulation.Triggered when users request invariant inference, loop-property discovery, assertion generation, or loop verification.
 ---
 
 # Loop Invariant Inference
@@ -8,8 +8,6 @@ description: Automatically infer loop invariants for C programs to support code 
 ## Overview
 
 Analyze loops and automatically infer invariants—properties that remain true throughout loop execution. The input file is already QCP-formatted (QCP struct/predicate names, `#include` header).
-
-**Target tool calls per file: 5–8**. If you exceed 12, you are doing unnecessary work.
 
 ## Key Paths
 
