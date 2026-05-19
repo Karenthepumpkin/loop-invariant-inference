@@ -1,0 +1,353 @@
+DIGEST c465fa73e297f3b50636dc60903eeb4b
+FSimpleC.EE.infra.dll_shape_lib
+R15:31 Coq.ZArith.ZArith <> <> lib
+R49:61 Coq.Bool.Bool <> <> lib
+R79:92 Coq.Lists.List <> <> lib
+R110:136 Coq.Classes.RelationClasses <> <> lib
+R154:174 Coq.Classes.Morphisms <> <> lib
+R192:210 Coq.micromega.Psatz <> <> lib
+R228:238 Coq.Sorting.Permutation <> <> lib
+R256:261 Coq.Strings.String <> <> lib
+R291:298 AUXLib.int_auto <> <> lib
+R300:305 AUXLib.Axioms <> <> lib
+R307:309 AUXLib.Feq <> <> lib
+R311:316 AUXLib.Idents <> <> lib
+R318:324 AUXLib.ListLib <> <> lib
+R326:329 AUXLib.VMap <> <> lib
+R347:365 SetsClass.SetsClass <> <> lib
+R375:386 SetsClass.SetsClass_AxiomFree SetsNotation <> mod
+R420:422 SimpleC.SL.Mem <> <> lib
+R424:438 SimpleC.SL.SeparationLogic <> <> lib
+R456:493 Logic.LogicGenerator.demo932.Interface <> <> lib
+R552:564 Coq.Lists.List ListNotations <> mod
+R605:610 Coq.Strings.String <> <> lib
+R646:658 SimpleC.SL.SeparationLogic naive_C_Rules <> mod
+R733:745 SimpleC.EE.infra.dll_queue_lib <> <> lib
+def 760:773 <> dlistrep_shape
+R784:787 SimpleC.SL.CNotation <> addr def
+binder 776:776 <> x:1
+binder 778:781 <> prev:2
+R792:800 SimpleC.SL.CommonAssertion DerivedPredSig :::'Assertion' not
+R807:809 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R819:820 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R813:816 Coq.Init.Datatypes <> list ind
+R818:818 Coq.Numbers.BinNums <> Z ind
+binder 810:810 <> l:3
+R821:828 SimpleC.EE.infra.dll_queue_lib <> dlistrep def
+R830:830 SimpleC.EE.infra.dll_shape_lib <> x:1 var
+R832:835 SimpleC.EE.infra.dll_shape_lib <> prev:2 var
+R837:837 SimpleC.EE.infra.dll_shape_lib <> l:3 var
+def 852:863 <> dllseg_shape
+R877:880 SimpleC.SL.CNotation <> addr def
+binder 866:866 <> x:4
+binder 868:869 <> px:5
+binder 871:872 <> py:6
+binder 874:874 <> y:7
+R885:893 SimpleC.SL.CommonAssertion DerivedPredSig :::'Assertion' not
+R900:902 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R912:913 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R906:909 Coq.Init.Datatypes <> list ind
+R911:911 Coq.Numbers.BinNums <> Z ind
+binder 903:903 <> l:8
+R914:919 SimpleC.EE.infra.dll_queue_lib <> dllseg def
+R921:921 SimpleC.EE.infra.dll_shape_lib <> x:4 var
+R923:923 SimpleC.EE.infra.dll_shape_lib <> y:7 var
+R925:926 SimpleC.EE.infra.dll_shape_lib <> px:5 var
+R928:929 SimpleC.EE.infra.dll_shape_lib <> py:6 var
+R931:931 SimpleC.EE.infra.dll_shape_lib <> l:8 var
+prf 941:953 <> dlistrep_zero
+R973:973 Coq.Numbers.BinNums <> Z ind
+binder 965:965 <> x:9
+binder 967:970 <> prev:10
+R985:988 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R978:980 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R977:977 SimpleC.EE.infra.dll_shape_lib <> x:9 var
+R981:984 SimpleC.SL.CNotation <> NULL def
+R1010:1014 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R989:1002 SimpleC.EE.infra.dll_shape_lib <> dlistrep_shape def
+R1004:1004 SimpleC.EE.infra.dll_shape_lib <> x:9 var
+R1006:1009 SimpleC.EE.infra.dll_shape_lib <> prev:10 var
+R1015:1017 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'emp' not
+prf 1037:1053 <> dlistrep_not_zero
+R1073:1073 Coq.Numbers.BinNums <> Z ind
+binder 1065:1065 <> x:11
+binder 1067:1070 <> prev:12
+R1086:1089 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1078:1081 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1077:1077 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+R1082:1085 SimpleC.SL.CNotation <> NULL def
+R1111:1115 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1090:1103 SimpleC.EE.infra.dll_shape_lib <> dlistrep_shape def
+R1105:1105 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+R1107:1110 SimpleC.EE.infra.dll_shape_lib <> prev:12 var
+R1116:1118 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1122:1123 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+binder 1119:1119 <> v:13
+binder 1121:1121 <> y:14
+R1253:1256 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1206:1211 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1162:1167 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1150:1160 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1124:1125 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1149:1149 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1136:1142 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1127:1129 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1126:1126 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+R1161:1161 SimpleC.EE.infra.dll_shape_lib <> v:13 var
+R1194:1204 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1168:1169 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1193:1193 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1180:1186 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1171:1173 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1170:1170 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+R1205:1205 SimpleC.EE.infra.dll_shape_lib <> y:14 var
+R1238:1248 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1212:1213 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1237:1237 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1224:1230 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1215:1217 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1214:1214 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+R1249:1252 SimpleC.EE.infra.dll_shape_lib <> prev:12 var
+R1257:1270 SimpleC.EE.infra.dll_shape_lib <> dlistrep_shape def
+R1272:1272 SimpleC.EE.infra.dll_shape_lib <> y:14 var
+R1274:1274 SimpleC.EE.infra.dll_shape_lib <> x:11 var
+prf 1294:1314 <> dllseg_dlistrep_shape
+binder 1325:1325 <> x:15
+binder 1327:1327 <> y:16
+binder 1329:1330 <> px:17
+binder 1332:1333 <> py:18
+R1384:1388 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1361:1364 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1339:1350 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1352:1352 SimpleC.EE.infra.dll_shape_lib <> x:15 var
+R1354:1355 SimpleC.EE.infra.dll_shape_lib <> px:17 var
+R1357:1358 SimpleC.EE.infra.dll_shape_lib <> py:18 var
+R1360:1360 SimpleC.EE.infra.dll_shape_lib <> y:16 var
+R1365:1378 SimpleC.EE.infra.dll_shape_lib <> dlistrep_shape def
+R1380:1380 SimpleC.EE.infra.dll_shape_lib <> y:16 var
+R1382:1383 SimpleC.EE.infra.dll_shape_lib <> py:18 var
+R1389:1402 SimpleC.EE.infra.dll_shape_lib <> dlistrep_shape def
+R1404:1404 SimpleC.EE.infra.dll_shape_lib <> x:15 var
+R1406:1407 SimpleC.EE.infra.dll_shape_lib <> px:17 var
+prf 1427:1443 <> dllseg_shape_len1
+R1463:1466 SimpleC.SL.CNotation <> addr def
+binder 1454:1454 <> x:19
+binder 1456:1457 <> px:20
+binder 1459:1460 <> nx:21
+R1473:1473 Coq.Numbers.BinNums <> Z ind
+binder 1470:1470 <> a:22
+R1488:1493 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1480:1483 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1479:1479 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1484:1487 SimpleC.SL.CNotation <> NULL def
+R1622:1628 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1577:1582 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1532:1537 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1520:1530 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1494:1495 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1519:1519 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1506:1512 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1497:1499 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1496:1496 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1531:1531 SimpleC.EE.infra.dll_shape_lib <> a:22 var
+R1564:1574 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1538:1539 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1563:1563 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1550:1556 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1541:1543 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1540:1540 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1575:1576 SimpleC.EE.infra.dll_shape_lib <> nx:21 var
+R1609:1619 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1583:1584 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1608:1608 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1595:1601 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1586:1588 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1585:1585 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1620:1621 SimpleC.EE.infra.dll_shape_lib <> px:20 var
+R1629:1640 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1642:1642 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1644:1645 SimpleC.EE.infra.dll_shape_lib <> px:20 var
+R1647:1647 SimpleC.EE.infra.dll_shape_lib <> x:19 var
+R1649:1650 SimpleC.EE.infra.dll_shape_lib <> nx:21 var
+prf 1670:1688 <> dllseg_dllseg_shape
+R1715:1718 SimpleC.SL.CNotation <> addr def
+binder 1699:1699 <> x:23
+binder 1701:1701 <> y:24
+binder 1703:1703 <> z:25
+binder 1705:1706 <> px:26
+binder 1708:1709 <> py:27
+binder 1711:1712 <> pz:28
+R1774:1780 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1746:1751 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1724:1735 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1737:1737 SimpleC.EE.infra.dll_shape_lib <> x:23 var
+R1739:1740 SimpleC.EE.infra.dll_shape_lib <> px:26 var
+R1742:1743 SimpleC.EE.infra.dll_shape_lib <> py:27 var
+R1745:1745 SimpleC.EE.infra.dll_shape_lib <> y:24 var
+R1752:1763 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1765:1765 SimpleC.EE.infra.dll_shape_lib <> y:24 var
+R1767:1768 SimpleC.EE.infra.dll_shape_lib <> py:27 var
+R1770:1771 SimpleC.EE.infra.dll_shape_lib <> pz:28 var
+R1773:1773 SimpleC.EE.infra.dll_shape_lib <> z:25 var
+R1781:1792 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1794:1794 SimpleC.EE.infra.dll_shape_lib <> x:23 var
+R1796:1797 SimpleC.EE.infra.dll_shape_lib <> px:26 var
+R1799:1800 SimpleC.EE.infra.dll_shape_lib <> pz:28 var
+R1802:1802 SimpleC.EE.infra.dll_shape_lib <> z:25 var
+prf 1822:1838 <> dllseg_split_head
+R1861:1864 SimpleC.SL.CNotation <> addr def
+binder 1850:1850 <> x:29
+binder 1852:1853 <> px:30
+binder 1855:1856 <> py:31
+binder 1858:1858 <> y:32
+R1876:1882 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1871:1874 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1870:1870 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R1875:1875 SimpleC.EE.infra.dll_shape_lib <> y:32 var
+R1905:1912 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1883:1894 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R1896:1896 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R1898:1899 SimpleC.EE.infra.dll_shape_lib <> px:30 var
+R1901:1902 SimpleC.EE.infra.dll_shape_lib <> py:31 var
+R1904:1904 SimpleC.EE.infra.dll_shape_lib <> y:32 var
+R1913:1915 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1919:1920 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+binder 1916:1916 <> z:33
+binder 1918:1918 <> a:34
+R2048:2051 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2003:2008 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1959:1964 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1947:1957 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1921:1922 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1946:1946 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1933:1939 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1924:1926 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1923:1923 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R1958:1958 SimpleC.EE.infra.dll_shape_lib <> a:34 var
+R1991:2001 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1965:1966 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1990:1990 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1977:1983 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1968:1970 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1967:1967 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R2002:2002 SimpleC.EE.infra.dll_shape_lib <> z:33 var
+R2035:2045 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2009:2010 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2034:2034 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2021:2027 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2012:2014 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2011:2011 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R2046:2047 SimpleC.EE.infra.dll_shape_lib <> px:30 var
+R2052:2063 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R2065:2065 SimpleC.EE.infra.dll_shape_lib <> z:33 var
+R2067:2067 SimpleC.EE.infra.dll_shape_lib <> x:29 var
+R2069:2070 SimpleC.EE.infra.dll_shape_lib <> py:31 var
+R2072:2072 SimpleC.EE.infra.dll_shape_lib <> y:32 var
+prf 2092:2108 <> dllseg_split_tail
+R2131:2134 SimpleC.SL.CNotation <> addr def
+binder 2120:2120 <> x:35
+binder 2122:2123 <> px:36
+binder 2125:2126 <> py:37
+binder 2128:2128 <> y:38
+R2146:2152 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2141:2144 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2140:2140 SimpleC.EE.infra.dll_shape_lib <> x:35 var
+R2145:2145 SimpleC.EE.infra.dll_shape_lib <> y:38 var
+R2175:2182 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2153:2164 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R2166:2166 SimpleC.EE.infra.dll_shape_lib <> x:35 var
+R2168:2169 SimpleC.EE.infra.dll_shape_lib <> px:36 var
+R2171:2172 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+R2174:2174 SimpleC.EE.infra.dll_shape_lib <> y:38 var
+R2183:2185 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R2189:2190 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+binder 2186:2186 <> z:39
+binder 2188:2188 <> a:40
+R2203:2206 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R2191:2193 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2201:2202 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2196:2199 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2194:2195 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+R2336:2339 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2291:2296 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2246:2251 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2234:2244 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R2207:2208 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2233:2233 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2220:2226 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2211:2213 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2209:2210 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+R2245:2245 SimpleC.EE.infra.dll_shape_lib <> a:40 var
+R2279:2289 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2252:2253 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2278:2278 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2265:2271 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2256:2258 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2254:2255 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+R2290:2290 SimpleC.EE.infra.dll_shape_lib <> y:38 var
+R2324:2334 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2297:2298 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2323:2323 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2310:2316 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2301:2303 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2299:2300 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+R2335:2335 SimpleC.EE.infra.dll_shape_lib <> z:39 var
+R2340:2351 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R2353:2353 SimpleC.EE.infra.dll_shape_lib <> x:35 var
+R2355:2356 SimpleC.EE.infra.dll_shape_lib <> px:36 var
+R2358:2358 SimpleC.EE.infra.dll_shape_lib <> z:39 var
+R2360:2361 SimpleC.EE.infra.dll_shape_lib <> py:37 var
+prf 2383:2400 <> dllseg_split_tail'
+R2423:2426 SimpleC.SL.CNotation <> addr def
+binder 2412:2412 <> x:41
+binder 2414:2415 <> px:42
+binder 2417:2418 <> py:43
+binder 2420:2420 <> y:44
+R2440:2446 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2434:2437 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2432:2433 SimpleC.EE.infra.dll_shape_lib <> px:42 var
+R2438:2439 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2469:2476 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2447:2458 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R2460:2460 SimpleC.EE.infra.dll_shape_lib <> x:41 var
+R2462:2463 SimpleC.EE.infra.dll_shape_lib <> px:42 var
+R2465:2466 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2468:2468 SimpleC.EE.infra.dll_shape_lib <> y:44 var
+R2477:2479 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R2483:2484 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+binder 2480:2480 <> z:45
+binder 2482:2482 <> a:46
+R2497:2500 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R2485:2487 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2495:2496 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2490:2493 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2488:2489 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2630:2633 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2585:2590 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2540:2545 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2528:2538 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R2501:2502 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2527:2527 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2514:2520 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2505:2507 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2503:2504 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2539:2539 SimpleC.EE.infra.dll_shape_lib <> a:46 var
+R2573:2583 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2546:2547 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2572:2572 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2559:2565 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2550:2552 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2548:2549 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2584:2584 SimpleC.EE.infra.dll_shape_lib <> y:44 var
+R2618:2628 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2591:2592 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2617:2617 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2604:2610 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2595:2597 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2593:2594 SimpleC.EE.infra.dll_shape_lib <> py:43 var
+R2629:2629 SimpleC.EE.infra.dll_shape_lib <> z:45 var
+R2634:2645 SimpleC.EE.infra.dll_shape_lib <> dllseg_shape def
+R2647:2647 SimpleC.EE.infra.dll_shape_lib <> x:41 var
+R2649:2650 SimpleC.EE.infra.dll_shape_lib <> px:42 var
+R2652:2652 SimpleC.EE.infra.dll_shape_lib <> z:45 var
+R2654:2655 SimpleC.EE.infra.dll_shape_lib <> py:43 var

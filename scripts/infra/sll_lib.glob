@@ -1,0 +1,425 @@
+DIGEST 61b56fce8cafc8b8c0cc73a409ec3c40
+FSimpleC.EE.infra.sll_lib
+R15:31 Coq.ZArith.ZArith <> <> lib
+R49:61 Coq.Bool.Bool <> <> lib
+R79:92 Coq.Lists.List <> <> lib
+R110:136 Coq.Classes.RelationClasses <> <> lib
+R154:174 Coq.Classes.Morphisms <> <> lib
+R192:210 Coq.micromega.Psatz <> <> lib
+R228:238 Coq.Sorting.Permutation <> <> lib
+R256:261 Coq.Strings.String <> <> lib
+R291:298 AUXLib.int_auto <> <> lib
+R300:305 AUXLib.Axioms <> <> lib
+R307:309 AUXLib.Feq <> <> lib
+R311:316 AUXLib.Idents <> <> lib
+R318:324 AUXLib.ListLib <> <> lib
+R326:329 AUXLib.VMap <> <> lib
+R347:365 SetsClass.SetsClass <> <> lib
+R375:386 SetsClass.SetsClass_AxiomFree SetsNotation <> mod
+R420:422 SimpleC.SL.Mem <> <> lib
+R424:438 SimpleC.SL.SeparationLogic <> <> lib
+R456:493 Logic.LogicGenerator.demo932.Interface <> <> lib
+R529:536 compcert.lib.Integers <> <> lib
+R595:607 Coq.Lists.List ListNotations <> mod
+R648:653 Coq.Strings.String <> <> lib
+R689:701 SimpleC.SL.SeparationLogic naive_C_Rules <> mod
+def 736:738 <> sll
+R744:747 SimpleC.SL.CNotation <> addr def
+binder 741:741 <> x:1
+R754:757 Coq.Init.Datatypes <> list ind
+R759:759 Coq.Numbers.BinNums <> Z ind
+binder 751:751 <> l:2
+R763:771 SimpleC.SL.CommonAssertion DerivedPredSig :::'Assertion' not
+R784:784 SimpleC.EE.infra.sll_lib <> l:2 var
+R797:799 Coq.Init.Datatypes <> nil constr
+R822:825 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R808:810 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R819:821 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R812:814 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R811:811 SimpleC.EE.infra.sll_lib <> x:1 var
+R815:818 SimpleC.SL.CNotation <> NULL def
+R826:828 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'emp' not
+R837:840 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R862:883 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R847:849 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R859:861 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R851:854 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R850:850 SimpleC.EE.infra.sll_lib <> x:1 var
+R855:858 SimpleC.SL.CNotation <> NULL def
+R884:886 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R894:914 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R890:893 SimpleC.SL.CNotation <> addr def
+binder 887:887 <> y:5
+R1014:1036 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R953:975 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R941:951 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R915:916 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R940:940 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R927:933 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R918:920 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R917:917 SimpleC.EE.infra.sll_lib <> x:1 var
+R1002:1012 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R976:977 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1001:1001 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R988:994 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R979:981 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R978:978 SimpleC.EE.infra.sll_lib <> x:1 var
+R1013:1013 SimpleC.EE.infra.sll_lib <> y:5 var
+R1037:1039 SimpleC.EE.infra.sll_lib <> sll:3 def
+R1041:1041 SimpleC.EE.infra.sll_lib <> y:5 var
+def 1063:1068 <> sllseg
+R1076:1079 SimpleC.SL.CNotation <> addr def
+binder 1071:1071 <> x:6
+binder 1073:1073 <> y:7
+R1086:1089 Coq.Init.Datatypes <> list ind
+R1091:1091 Coq.Numbers.BinNums <> Z ind
+binder 1083:1083 <> l:8
+R1095:1103 SimpleC.SL.CommonAssertion DerivedPredSig :::'Assertion' not
+R1116:1116 SimpleC.EE.infra.sll_lib <> l:8 var
+R1129:1131 Coq.Init.Datatypes <> nil constr
+R1151:1154 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1140:1142 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1148:1150 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1144:1146 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1143:1143 SimpleC.EE.infra.sll_lib <> x:6 var
+R1147:1147 SimpleC.EE.infra.sll_lib <> y:7 var
+R1155:1157 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'emp' not
+R1166:1169 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1191:1212 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1176:1178 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1188:1190 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1180:1183 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1179:1179 SimpleC.EE.infra.sll_lib <> x:6 var
+R1184:1187 SimpleC.SL.CNotation <> NULL def
+R1213:1215 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1223:1243 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1219:1222 SimpleC.SL.CNotation <> addr def
+binder 1216:1216 <> z:11
+R1343:1365 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1282:1304 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1270:1280 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1244:1245 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1269:1269 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1256:1262 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1247:1249 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1246:1246 SimpleC.EE.infra.sll_lib <> x:6 var
+R1331:1341 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1305:1306 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1330:1330 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1317:1323 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1308:1310 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1307:1307 SimpleC.EE.infra.sll_lib <> x:6 var
+R1342:1342 SimpleC.EE.infra.sll_lib <> z:11 var
+R1366:1371 SimpleC.EE.infra.sll_lib <> sllseg:9 def
+R1375:1375 SimpleC.EE.infra.sll_lib <> y:7 var
+R1373:1373 SimpleC.EE.infra.sll_lib <> z:11 var
+def 1397:1403 <> sllbseg
+R1411:1414 SimpleC.SL.CNotation <> addr def
+binder 1406:1406 <> x:12
+binder 1408:1408 <> y:13
+R1421:1424 Coq.Init.Datatypes <> list ind
+R1426:1426 Coq.Numbers.BinNums <> Z ind
+binder 1418:1418 <> l:14
+R1430:1438 SimpleC.SL.CommonAssertion DerivedPredSig :::'Assertion' not
+R1451:1451 SimpleC.EE.infra.sll_lib <> l:14 var
+R1464:1466 Coq.Init.Datatypes <> nil constr
+R1486:1489 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1475:1477 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1483:1485 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1479:1481 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1478:1478 SimpleC.EE.infra.sll_lib <> x:12 var
+R1482:1482 SimpleC.EE.infra.sll_lib <> y:13 var
+R1490:1492 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'emp' not
+R1501:1504 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1511:1513 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1521:1541 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1517:1520 SimpleC.SL.CNotation <> addr def
+binder 1514:1514 <> z:17
+R1557:1580 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1542:1544 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1554:1556 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1546:1549 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1545:1545 SimpleC.EE.infra.sll_lib <> z:17 var
+R1550:1553 SimpleC.SL.CNotation <> NULL def
+R1655:1677 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1594:1616 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1582:1592 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1581:1581 SimpleC.EE.infra.sll_lib <> x:12 var
+R1593:1593 SimpleC.EE.infra.sll_lib <> z:17 var
+R1643:1653 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1617:1618 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1642:1642 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1629:1635 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1620:1622 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1619:1619 SimpleC.EE.infra.sll_lib <> z:17 var
+R1678:1684 SimpleC.EE.infra.sll_lib <> sllbseg:15 def
+R1715:1715 SimpleC.EE.infra.sll_lib <> y:13 var
+R1687:1688 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1712:1712 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1699:1705 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1690:1692 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1689:1689 SimpleC.EE.infra.sll_lib <> z:17 var
+prf 1734:1741 <> sll_zero
+binder 1751:1751 <> x:18
+binder 1753:1753 <> l:19
+R1766:1771 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1759:1761 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1758:1758 SimpleC.EE.infra.sll_lib <> x:18 var
+R1762:1765 SimpleC.SL.CNotation <> NULL def
+R1779:1783 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1772:1774 SimpleC.EE.infra.sll_lib <> sll def
+R1776:1776 SimpleC.EE.infra.sll_lib <> x:18 var
+R1778:1778 SimpleC.EE.infra.sll_lib <> l:19 var
+R1797:1800 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1784:1786 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1794:1796 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1788:1790 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1787:1787 SimpleC.EE.infra.sll_lib <> l:19 var
+R1791:1793 Coq.Init.Datatypes <> nil constr
+R1801:1803 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'emp' not
+prf 1823:1834 <> sll_not_zero
+binder 1844:1844 <> x:20
+binder 1846:1846 <> l:21
+R1860:1865 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1852:1855 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1851:1851 SimpleC.EE.infra.sll_lib <> x:20 var
+R1856:1859 SimpleC.SL.CNotation <> NULL def
+R1873:1881 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R1866:1868 SimpleC.EE.infra.sll_lib <> sll def
+R1870:1870 SimpleC.EE.infra.sll_lib <> x:20 var
+R1872:1872 SimpleC.EE.infra.sll_lib <> l:21 var
+R1882:1884 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R1891:1898 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+binder 1885:1885 <> y:22
+binder 1887:1887 <> a:23
+binder 1889:1890 <> l0:24
+R1916:1925 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'&&'_x not
+R1899:1901 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1913:1915 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R1903:1905 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1902:1902 SimpleC.EE.infra.sll_lib <> l:21 var
+R1907:1910 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1906:1906 SimpleC.EE.infra.sll_lib <> a:23 var
+R1911:1912 SimpleC.EE.infra.sll_lib <> l0:24 var
+R2012:2021 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1964:1973 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R1952:1962 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R1926:1927 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1951:1951 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1938:1944 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1929:1931 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1928:1928 SimpleC.EE.infra.sll_lib <> x:20 var
+R1963:1963 SimpleC.EE.infra.sll_lib <> a:23 var
+R2000:2010 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R1974:1975 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1999:1999 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R1986:1992 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R1977:1979 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R1976:1976 SimpleC.EE.infra.sll_lib <> x:20 var
+R2011:2011 SimpleC.EE.infra.sll_lib <> y:22 var
+R2022:2024 SimpleC.EE.infra.sll_lib <> sll def
+R2026:2026 SimpleC.EE.infra.sll_lib <> y:22 var
+R2028:2029 SimpleC.EE.infra.sll_lib <> l0:24 var
+prf 2049:2061 <> sll_not_zero'
+binder 2071:2071 <> x:25
+binder 2073:2073 <> l:26
+R2087:2092 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2079:2082 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2078:2078 SimpleC.EE.infra.sll_lib <> x:25 var
+R2083:2086 SimpleC.SL.CNotation <> NULL def
+R2100:2104 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2093:2095 SimpleC.EE.infra.sll_lib <> sll def
+R2097:2097 SimpleC.EE.infra.sll_lib <> x:25 var
+R2099:2099 SimpleC.EE.infra.sll_lib <> l:26 var
+R2105:2107 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2116:2118 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R2109:2112 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2108:2108 SimpleC.EE.infra.sll_lib <> l:26 var
+R2113:2115 Coq.Init.Datatypes <> nil constr
+prf 2138:2148 <> sllseg_len1
+binder 2158:2158 <> x:27
+binder 2160:2160 <> a:28
+binder 2162:2162 <> y:29
+R2176:2181 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2168:2171 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2167:2167 SimpleC.EE.infra.sll_lib <> x:27 var
+R2172:2175 SimpleC.SL.CNotation <> NULL def
+R2264:2270 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2220:2225 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2208:2218 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R2182:2183 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2207:2207 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2194:2200 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2185:2187 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2184:2184 SimpleC.EE.infra.sll_lib <> x:27 var
+R2219:2219 SimpleC.EE.infra.sll_lib <> a:28 var
+R2252:2262 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2226:2227 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2251:2251 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2238:2244 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2229:2231 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2228:2228 SimpleC.EE.infra.sll_lib <> x:27 var
+R2263:2263 SimpleC.EE.infra.sll_lib <> y:29 var
+R2271:2276 SimpleC.EE.infra.sll_lib <> sllseg def
+R2278:2278 SimpleC.EE.infra.sll_lib <> x:27 var
+R2280:2280 SimpleC.EE.infra.sll_lib <> y:29 var
+R2282:2282 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R2284:2284 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R2283:2283 SimpleC.EE.infra.sll_lib <> a:28 var
+prf 2304:2316 <> sllseg_sllseg
+binder 2326:2326 <> x:30
+binder 2328:2328 <> y:31
+binder 2330:2330 <> z:32
+binder 2332:2333 <> l1:33
+binder 2335:2336 <> l2:34
+R2371:2377 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2354:2357 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2341:2346 SimpleC.EE.infra.sll_lib <> sllseg def
+R2348:2348 SimpleC.EE.infra.sll_lib <> x:30 var
+R2350:2350 SimpleC.EE.infra.sll_lib <> y:31 var
+R2352:2353 SimpleC.EE.infra.sll_lib <> l1:33 var
+R2358:2363 SimpleC.EE.infra.sll_lib <> sllseg def
+R2365:2365 SimpleC.EE.infra.sll_lib <> y:31 var
+R2367:2367 SimpleC.EE.infra.sll_lib <> z:32 var
+R2369:2370 SimpleC.EE.infra.sll_lib <> l2:34 var
+R2378:2383 SimpleC.EE.infra.sll_lib <> sllseg def
+R2385:2385 SimpleC.EE.infra.sll_lib <> x:30 var
+R2387:2387 SimpleC.EE.infra.sll_lib <> z:32 var
+R2392:2395 Coq.Init.Datatypes <> ::list_scope:x_'++'_x not
+R2390:2391 SimpleC.EE.infra.sll_lib <> l1:33 var
+R2396:2397 SimpleC.EE.infra.sll_lib <> l2:34 var
+prf 2418:2427 <> sllseg_sll
+binder 2437:2437 <> x:35
+binder 2439:2439 <> y:36
+binder 2441:2442 <> l1:37
+binder 2444:2445 <> l2:38
+R2475:2481 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2463:2466 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2450:2455 SimpleC.EE.infra.sll_lib <> sllseg def
+R2457:2457 SimpleC.EE.infra.sll_lib <> x:35 var
+R2459:2459 SimpleC.EE.infra.sll_lib <> y:36 var
+R2461:2462 SimpleC.EE.infra.sll_lib <> l1:37 var
+R2467:2469 SimpleC.EE.infra.sll_lib <> sll def
+R2471:2471 SimpleC.EE.infra.sll_lib <> y:36 var
+R2473:2474 SimpleC.EE.infra.sll_lib <> l2:38 var
+R2482:2484 SimpleC.EE.infra.sll_lib <> sll def
+R2486:2486 SimpleC.EE.infra.sll_lib <> x:35 var
+R2491:2494 Coq.Init.Datatypes <> ::list_scope:x_'++'_x not
+R2489:2490 SimpleC.EE.infra.sll_lib <> l1:37 var
+R2495:2496 SimpleC.EE.infra.sll_lib <> l2:38 var
+prf 2517:2532 <> sllbseg_2_sllseg
+binder 2542:2542 <> x:39
+binder 2544:2544 <> y:40
+binder 2546:2546 <> z:41
+binder 2548:2548 <> l:42
+R2583:2589 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2566:2569 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2553:2559 SimpleC.EE.infra.sll_lib <> sllbseg def
+R2561:2561 SimpleC.EE.infra.sll_lib <> x:39 var
+R2563:2563 SimpleC.EE.infra.sll_lib <> y:40 var
+R2565:2565 SimpleC.EE.infra.sll_lib <> l:42 var
+R2571:2581 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2570:2570 SimpleC.EE.infra.sll_lib <> y:40 var
+R2582:2582 SimpleC.EE.infra.sll_lib <> z:41 var
+R2590:2592 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R2601:2602 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'EX'_x_'..'_x_','_x not
+R2597:2600 SimpleC.SL.CNotation <> addr def
+binder 2593:2594 <> y':43
+R2617:2620 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2604:2614 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2603:2603 SimpleC.EE.infra.sll_lib <> x:39 var
+R2615:2616 SimpleC.EE.infra.sll_lib <> y':43 var
+R2621:2626 SimpleC.EE.infra.sll_lib <> sllseg def
+R2628:2629 SimpleC.EE.infra.sll_lib <> y':43 var
+R2631:2631 SimpleC.EE.infra.sll_lib <> z:41 var
+R2633:2633 SimpleC.EE.infra.sll_lib <> l:42 var
+prf 2653:2664 <> sllbseg_len1
+R2680:2683 SimpleC.SL.CNotation <> addr def
+binder 2675:2675 <> x:44
+binder 2677:2677 <> y:45
+R2690:2690 Coq.Numbers.BinNums <> Z ind
+binder 2687:2687 <> a:46
+R2702:2707 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2697:2700 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2696:2696 SimpleC.EE.infra.sll_lib <> y:45 var
+R2766:2772 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2721:2726 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2709:2719 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Ptr'_'|->'_x not
+R2708:2708 SimpleC.EE.infra.sll_lib <> x:44 var
+R2720:2720 SimpleC.EE.infra.sll_lib <> y:45 var
+R2754:2764 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'#'_'Int'_'|->'_x not
+R2727:2729 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2753:2753 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2740:2746 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2731:2733 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2730:2730 SimpleC.EE.infra.sll_lib <> y:45 var
+R2765:2765 SimpleC.EE.infra.sll_lib <> a:46 var
+R2773:2779 SimpleC.EE.infra.sll_lib <> sllbseg def
+R2781:2781 SimpleC.EE.infra.sll_lib <> x:44 var
+R2784:2786 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2810:2810 SimpleC.SL.CNotation <> :::'&('_x_')' not
+R2797:2803 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'->ₛ'_x not
+R2788:2790 SimpleC.SL.CNotation <> :lvalue_expr_entry::x_'#'_x not
+R2787:2787 SimpleC.EE.infra.sll_lib <> y:45 var
+R2813:2813 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R2815:2815 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R2814:2814 SimpleC.EE.infra.sll_lib <> a:46 var
+prf 2835:2849 <> sllbseg_sllbseg
+binder 2859:2859 <> x:47
+binder 2861:2861 <> y:48
+binder 2863:2863 <> z:49
+binder 2865:2866 <> l1:50
+binder 2868:2869 <> l2:51
+R2906:2912 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2888:2891 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'**'_x not
+R2874:2880 SimpleC.EE.infra.sll_lib <> sllbseg def
+R2882:2882 SimpleC.EE.infra.sll_lib <> x:47 var
+R2884:2884 SimpleC.EE.infra.sll_lib <> y:48 var
+R2886:2887 SimpleC.EE.infra.sll_lib <> l1:50 var
+R2892:2898 SimpleC.EE.infra.sll_lib <> sllbseg def
+R2900:2900 SimpleC.EE.infra.sll_lib <> y:48 var
+R2902:2902 SimpleC.EE.infra.sll_lib <> z:49 var
+R2904:2905 SimpleC.EE.infra.sll_lib <> l2:51 var
+R2913:2919 SimpleC.EE.infra.sll_lib <> sllbseg def
+R2921:2921 SimpleC.EE.infra.sll_lib <> x:47 var
+R2923:2923 SimpleC.EE.infra.sll_lib <> z:49 var
+R2928:2931 Coq.Init.Datatypes <> ::list_scope:x_'++'_x not
+R2926:2927 SimpleC.EE.infra.sll_lib <> l1:50 var
+R2932:2933 SimpleC.EE.infra.sll_lib <> l2:51 var
+prf 2954:2965 <> sllseg_0_sll
+binder 2975:2975 <> x:52
+binder 2977:2977 <> l:53
+R2994:2998 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R2982:2987 SimpleC.EE.infra.sll_lib <> sllseg def
+R2989:2989 SimpleC.EE.infra.sll_lib <> x:52 var
+R2993:2993 SimpleC.EE.infra.sll_lib <> l:53 var
+R2999:3001 SimpleC.EE.infra.sll_lib <> sll def
+R3003:3003 SimpleC.EE.infra.sll_lib <> x:52 var
+R3005:3005 SimpleC.EE.infra.sll_lib <> l:53 var
+prf 3027:3036 <> sll_length
+binder 3047:3047 <> x:54
+binder 3049:3049 <> l:55
+R3062:3066 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R3055:3057 SimpleC.EE.infra.sll_lib <> sll def
+R3059:3059 SimpleC.EE.infra.sll_lib <> x:54 var
+R3061:3061 SimpleC.EE.infra.sll_lib <> l:55 var
+R3067:3080 SimpleC.SL.SeparationLogic naive_C_Rules store_align4_n def
+R3092:3094 Coq.ZArith.BinInt <> ::Z_scope:x_'*'_x not
+R3083:3089 Coq.ZArith.Zcomplements <> Zlength def
+R3091:3091 SimpleC.EE.infra.sll_lib <> l:55 var
+prf 3119:3132 <> sll_length_max
+binder 3143:3143 <> x:56
+binder 3145:3145 <> l:57
+R3158:3162 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:x_'|--'_x not
+R3151:3153 SimpleC.EE.infra.sll_lib <> sll def
+R3155:3155 SimpleC.EE.infra.sll_lib <> x:56 var
+R3157:3157 SimpleC.EE.infra.sll_lib <> l:57 var
+R3163:3165 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R3207:3208 SimpleC.SL.CommonAssertion DerivedPredSig ::sac_scope:'[|'_x_'|]' not
+R3179:3182 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R3175:3177 Coq.ZArith.BinInt <> ::Z_scope:x_'*'_x not
+R3166:3172 Coq.ZArith.Zcomplements <> Zlength def
+R3174:3174 SimpleC.EE.infra.sll_lib <> l:57 var
+R3203:3205 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R3199:3201 Coq.ZArith.BinInt <> ::Z_scope:x_'/'_x not
+R3183:3198 compcert.lib.Integers Int max_unsigned def
