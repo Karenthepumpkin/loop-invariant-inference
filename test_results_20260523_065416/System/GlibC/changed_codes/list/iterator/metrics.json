@@ -1,8 +1,0 @@
-{
-  "tool_uses": 26,
-  "tool_breakdown": {
-    "Read": 7,
-    "Bash": 14,
-    "Write": 5
-  }
-}
