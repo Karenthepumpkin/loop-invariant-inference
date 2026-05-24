@@ -1,0 +1,9 @@
+{
+  "total_tokens": null,
+  "tool_uses": 32,
+  "tool_breakdown": {
+    "Read": 9,
+    "Bash": 22,
+    "Write": 1
+  }
+}
