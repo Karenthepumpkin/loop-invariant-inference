@@ -227,11 +227,9 @@ def parse_switch_markers(lines: list[str]) -> list[dict]:
 
 def simplify_state(state: dict) -> dict:
     return {
-        "branch": state.get("branch_name"),
-        "next_branch": state.get("next_branch_name"),
         "PROP": state.get("prop", []),
-        "LOCAL": state.get("local", []),
-        "SEP": state.get("sep", []),
+        "LOCAL": [l for l in state.get("local", []) if "in_loop" not in l],
+        "SEP": [s for s in state.get("sep", []) if "in_loop" not in s],
         "exists": state.get("exists", []),
     }
 
@@ -241,7 +239,6 @@ def format_states_txt(data: dict) -> str:
     for rp in data["recording_points"]:
         s = simplify_state(rp["state"])
         out.append(f"--- {rp['type']} (line {rp['line']}, #{rp['occurrence']}) ---")
-        out.append(f"  branch: {s['branch']}  next_branch: {s['next_branch']}")
         if s['exists']:
             out.append(f"  exists: {' '.join(s['exists'])}")
         if s['PROP']:

@@ -1,0 +1,30 @@
+Your only instruction source is /home/tzh66/loop-invariant-inference/SKILL.md. Read it first, then follow every step
+  exactly.
+
+  Isolation rules:
+  - Do NOT read any file under /home/tzh66/.claude/projects/ or ~/.claude/
+  - Do NOT read CLAUDE.md or any project-level instructions beyond SKILL.md
+  - Do NOT use memory, prior knowledge, or any external context
+  - Max 2 retries if verification fails
+
+  Your assigned file:
+  /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/reverse/rev.c
+
+  Use slug "linux_list_reverse" for all workspace/tmp filenames.
+
+  Before step 1.2, ensure /home/tzh66/loop-invariant-inference/tmp/ exists (mkdir -p).
+
+  Workflow:
+  1. Read SKILL.md at /home/tzh66/loop-invariant-inference/SKILL.md
+  2. Execute steps 1.1-1.4 (unroll → symexec → parse)
+  3. Execute step 2 (infer invariant)
+  4. Execute step 3 (verify, retry up to 2x if needed)
+  5. Do NOT run cleanup (step 5) — keep all generated files
+
+  Output exactly these 4 lines at the very end:
+  FILE: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/reverse/rev.c
+  QCP_VERIFIED: YES|NO
+  INVARIANT: <the complete invariant>
+  RETRIES: <N>
+
+  Important: Use Bash tool for all symexec, Python, and file commands. Do not ask for permission — just execute.

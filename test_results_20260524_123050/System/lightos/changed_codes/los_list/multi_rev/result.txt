@@ -1,0 +1,46 @@
+QCP_VERIFIED: NO
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list * append(struct list * x, struct list * y)
+/*@ With x_prev
+	Require dlistrep_shape(x, x_prev) * dlistrep_shape(y,0)
+  Ensure dlistrep_shape(__return,x_prev)
+ */;
+
+struct list *multi_rev(struct list *p, struct list *q)
+/*@ Require dlistrep_shape(p,0) * dlistrep_shape(q,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+{
+    struct list *w, *t, *v, *x, *y;
+    w = 0;
+    x = 0;
+    v = p;
+    y = q;
+    /*@ Inv Assert dlistrep_shape(w, v) * dlistrep_shape(v, w) * dlistrep_shape(x, y) * dlistrep_shape(y, x) * has_permission(&t) */
+    while (1) {
+      if (v) {
+        t = v->next;
+        v->next = w;
+        v->prev = t;
+        w = v;
+        v = t;
+      }
+      else {
+        if (y) {
+          t = y->next;
+          y->next = x;
+          y->prev = t;
+          x = y;
+          y = t;
+        }
+        else {
+          t = append(w , x);
+          return t;
+        }
+      }
+    }
+  // Deadcode : return 0;
+}
+```

@@ -1,0 +1,859 @@
+
+============================================================
+[THINKING] (160 chars)
+============================================================
+The user wants me to run the SKILL.md pipeline on a specific file. Let me first read the SKILL.md to understand the full workflow, then execute it step by step.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/SKILL.md
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/append/app.c
+
+============================================================
+[THINKING] (2306 chars)
+============================================================
+Let me analyze the input file and plan the workflow:
+
+1. The input file is `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/append/app.c`
+2. RESULT directory: `/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append`
+3. The file uses `dll_nodata_def.h` header, so the reference is `references/dll_nodata.md` and the Coq lib is `dll_nodata_shape_lib`
+4. SKILL_DIR is `/home/tzh66/loop-invariant-inference`
+
+Let me now follow the workflow step by step:
+
+Step 1.1: Unroll the loop
+Step 1.2: Run symexec
+Step 1.3: Parse the log
+Step 1.4: Read states
+Step 2: Infer invariant
+Step 3: Verify
+Step 4: Output
+
+Let me start by creating the required directories and running step 1.1.
+
+The script paths use `<SKILL_DIR>` which is `/home/tzh66/loop-invariant-inference`. But the user says to use `$RESULT/workspace/` and `$RESULT/tmp/` which is `/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/` and `/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/`.
+
+Wait, re-reading the instructions: "All relative paths below use this [SKILL_DIR]". But the user explicitly said "$RESULT/workspace/ $RESULT/tmp/" for those directories. Let me re-read.
+
+The user says: "RESULT: /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append" and "$RESULT/workspace/ $RESULT/tmp/."
+
+So I should use RESULT-based paths for workspace and tmp, not SKILL_DIR-based paths. This makes sense since multiple agents might run concurrently.
+
+Actually wait, let me re-read the SKILL.md more carefully. The workflow says `<SKILL_DIR>/workspace/` and `<SKILL_DIR>/tmp/`. But the user is telling me to use `$RESULT/workspace/` and `$RESULT/tmp/`. The user's instructions override.
+
+Let me set up the paths:
+- SKILL_DIR = `/home/tzh66/loop-invariant-inference`
+- INPUT = `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/append/app.c`
+- RESULT = `/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append`
+- WORKSPACE = `$RESULT/workspace`
+- TMP = `$RESULT/tmp`
+- Name = `app`
+
+Let me start the pipeline.
+
+[TEXT]
+I'll execute the full loop invariant inference pipeline. Let me start by setting up directories and running Step 1.
+
+**Step 1.1: Unroll the loop**
+
+[TOOL: Bash]
+Bash: mkdir -p /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp
+
+============================================================
+[THINKING] (53 chars)
+============================================================
+Good, directories created. Now run the unroll script.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/append/app.c --output /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_unrolled.c --ensure-emp
+
+============================================================
+[THINKING] (67 chars)
+============================================================
+Now let me read the unrolled file to understand the loop structure.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_unrolled.c
+
+============================================================
+[THINKING] (126 chars)
+============================================================
+Good, the loop is unrolled. Now step 1.2: run symexec. The header is `dll_nodata_def.h`, so the lib is `dll_nodata_shape_lib`.
+
+[TEXT]
+**Step 1.2: Run symexec on unrolled file**
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_unrolled.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_symexec.log
+
+============================================================
+[THINKING] (62 chars)
+============================================================
+Let me check the gate condition - the last 3 lines of the log.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_symexec.log
+
+============================================================
+[THINKING] (41 chars)
+============================================================
+Gate passed. Now step 1.3: Parse the log.
+
+[TEXT]
+Gate passed. Now **Step 1.3: Parse the log**.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py \
+  --file /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_symexec.log \
+  --out-states /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_states.txt \
+  --out-json /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_states.json
+
+============================================================
+[THINKING] (100 chars)
+============================================================
+Gate passed: at least RP_pre_loop and RP_iter_2 present. Now read the states file and the reference.
+
+[TEXT]
+Gate passed: 3 recording points. Now read the states file and reference.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/workspace/app_states.txt
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/references/dll_nodata.md
+
+============================================================
+[THINKING] (31013 chars)
+============================================================
+Now let me analyze the states carefully to infer the loop invariant.
+
+**Loop analysis**:
+The loop is a DLL traversal to find the tail:
+```
+t = x;
+u = t->next;
+while (u) {
+    t = u;
+    u = t->next;
+}
+t->next = y;
+if (y) {
+    y->prev = t;
+}
+return x;
+```
+
+The loop traverses the list from `x`, with `t` being the "current" node and `u` being the "next" node. After the loop, `t` points to the last node and `u` is NULL. Then `t->next = y` appends `y` to the end.
+
+**RP Analysis**:
+
+**RP_pre_loop** (after `t = x; u = t->next;`, before first condition check):
+- exists: y_289
+- PROP: (x@pre != 0)
+- SEP:
+  - data_at(&(x@pre->next), struct list*, y_289)  -- x's next field
+  - dlistrep_shape(y_289, x@pre)  -- rest of list starting at x->next, prev = x
+  - data_at(&(x@pre->prev), struct list*, 0)  -- x's prev field is 0 (head)
+  - data_at(u_286_addr, struct list*, y_289)  -- u = x->next
+  - data_at(t_283_addr, struct list*, x@pre)  -- t = x
+  - data_at(y_272_addr, struct list*, y@pre)  -- y parameter
+  - data_at(x_275_addr, struct list*, x@pre)  -- x parameter
+  - dlistrep_shape(y@pre, 0)  -- y list
+
+From this, at pre_loop:
+- t = x
+- u = x->next (y_289)
+- x != 0
+- The list from x to end is: x -> y_289 -> ... -> 0
+- y is a separate list: dlistrep_shape(y@pre, 0)
+
+**RP_iter_2** (after 1 iteration of loop body, before 2nd condition check):
+- exists: y_289, y_297
+- PROP: (y_289 != 0), (x@pre != 0)  -- u was not null (loop entered)
+- SEP:
+  - data_at(&(y_289->next), struct list*, y_297)  -- old u's next field (y_289 is the node that was u)
+  - dlistrep_shape(y_297, y_289)  -- rest of list starting at y_289->next
+  - data_at(&(y_289->prev), struct list*, x@pre)  -- old u's prev = x (this is correct for DLL)
+  - data_at(&(x@pre->next), struct list*, y_289)  -- x->next still = y_289
+  - data_at(&(x@pre->prev), struct list*, 0)  -- x->prev = 0 (head)
+  - data_at(u_286_addr, struct list*, y_297)  -- u now = y_289->next = y_297
+  - data_at(t_283_addr, struct list*, y_289)  -- t now = y_289 (old u)
+  - data_at(y_272_addr, struct list*, y@pre)  -- y param
+  - data_at(x_275_addr, struct list*, x@pre)  -- x param
+  - dlistrep_shape(y@pre, 0)  -- y list unchanged
+
+After 1 iteration:
+- t = y_289 (the old u)
+- u = y_297 (t->next)
+- The list from x to end is: x -> y_289 -> y_297 -> ... -> 0
+- y_289 != 0 (was the loop condition)
+
+**RP_iter_3** (after 2 iterations, before 3rd condition check):
+- exists: y_289, y_297, y_302
+- PROP: (y_297 != 0), (y_289 != 0), (x@pre != 0)  -- u was not null both times
+- SEP:
+  - data_at(&(y_297->next), struct list*, y_302)  -- new u's (but now u=y_302) next
+  - dlistrep_shape(y_302, y_297)  -- rest of list
+  - data_at(&(y_297->prev), struct list*, y_289)  -- new node's prev
+  - data_at(&(y_289->next), struct list*, y_297)  -- middle node's next
+  - data_at(&(y_289->prev), struct list*, x@pre)  -- middle node's prev
+  - data_at(&(x@pre->next), struct list*, y_289)  -- x->next
+  - data_at(&(x@pre->prev), struct list*, 0)  -- x->prev
+  - data_at(u_286_addr, struct list*, y_302)  -- u = y_302
+  - data_at(t_283_addr, struct list*, y_297)  -- t = y_297
+  - data_at(y_272_addr, struct list*, y@pre)  -- y param
+  - data_at(x_275_addr, struct list*, x@pre)  -- x param
+  - dlistrep_shape(y@pre, 0)  -- y list unchanged
+
+After 2 iterations:
+- t = y_297
+- u = y_302 (t->next)
+
+Now let me identify:
+
+**Frame items** (same across all RPs):
+- dlistrep_shape(y@pre, 0) -- y list, unchanged
+- data_at(x_275_addr, struct list*, x@pre) -- x stack var
+- data_at(y_272_addr, struct list*, y@pre) -- y stack var
+
+**Sliding items**:
+- data_at(u_286_addr, ...) and data_at(t_283_addr, ...) change: u and t advance
+- dlistrep_shape changes: pre_loop has dlistrep_shape(y_289, x@pre); iter_2 has dlistrep_shape(y_297, y_289); iter_3 has dlistrep_shape(y_302, y_297)
+
+**Pattern**: The structure is:
+- A segment from `x` to `t` (where `t` is the current/last reached node)
+  - x->prev = 0 (head)
+  - The segment extends from x through to the node before t
+- t is the current node (with fields exposed)
+- dlistrep_shape(u, t) where u = t->next
+
+Wait, let me re-think. Looking at the actual data_at items:
+
+In RP_pre_loop:
+- data_at(&(x->next), struct list*, y_289)  -- x's next = y_289 (which is u)
+- dlistrep_shape(y_289, x)  -- rest of list from u=y_289 with prev=x
+
+In RP_iter_2:
+- Now we have x's fields exposed, plus y_289's fields (x->next was y_289), plus rest from y_297
+- data_at(&(y_289->next), struct list*, y_297)  -- this is t->next (= u) 
+- dlistrep_shape(y_297, y_289)  -- rest from u with prev=t
+- data_at(&(y_289->prev), struct list*, x)  -- t->prev = x
+- data_at(&(x->next), struct list*, y_289)  -- still x->next = y_289
+- data_at(&(x->prev), struct list*, 0)  -- still x->prev = 0
+
+Wait, I need to understand what happens. The structure evolves as:
+- Pre-loop: x's node is exposed + dlistrep from x->next (y_289) with prev=x
+- Iter 2: x's node is exposed + y_289's node is exposed (with prev=x) + dlistrep from y_289->next (y_297) with prev=y_289
+
+Actually, looking more carefully, in iter_2:
+SEP order may not matter, but let me sort:
+- data_at(&(x->prev), struct list*, 0)  -- x.prev = 0 (head marker)
+- data_at(&(x->next), struct list*, y_289)  -- x.next = y_289
+- data_at(&(y_289->prev), struct list*, x)  -- y_289.prev = x
+- data_at(&(y_289->next), struct list*, y_297)  -- y_289.next = y_297
+- dlistrep_shape(y_297, y_289)  -- rest of list from y_297 with prev=y_289
+
+Plus the stack bindings and y list.
+
+In iter_3:
+- data_at(&(x->prev), struct list*, 0)
+- data_at(&(x->next), struct list*, y_289)
+- data_at(&(y_289->prev), struct list*, x)
+- data_at(&(y_289->next), struct list*, y_297)
+- data_at(&(y_297->prev), struct list*, y_289)
+- data_at(&(y_297->next), struct list*, y_302)
+- dlistrep_shape(y_302, y_297)
+
+Plus stack bindings (t = y_297, u = y_302) and y list.
+
+So the pattern is:
+- We have a CONCRETELY unrolled segment from x to t (where t is exposed)
+- A dlistrep_shape(u, t) for the rest (where u = t->next)
+- The y list is separate: dlistrep_shape(y, 0)
+- x->prev = 0 (head)
+
+Now let me think about the invariant:
+
+**Variables in scope**: x, y, t, u (all struct list *)
+
+**SEP**:
+1. **y list**: `dlistrep_shape(y, 0)` -- frame item, same in all RPs
+2. **Segment from x to t, prev=0 at start**: This is `dllseg_shape(x, 0, t->prev, t)` or similar...
+
+Wait, let me think about dllseg_shape. The params are: dllseg_shape(x, xp, yp, y) where:
+- x = segment start
+- xp = start node's prev
+- yp = last node inside segment (yp->next == y)
+- y = endpoint marker (NOT in segment)
+
+The segment from x to t (not including t):
+- Start = x, x->prev = 0
+- Last node inside segment = the node before t, say p. But in RP_pre_loop, t = x, so the segment is empty.
+  - dllseg_shape(x, 0, xp, x) where x == y and xp == yp
+  - But... in the definition, empty means x == y. So dllseg_shape(x, 0, ? , t) where at pre_loop, t == x, so it's empty.
+  - Actually wait. Let me reconsider.
+
+In RP_pre_loop: t = x. x's fields are individually exposed (data_at for x->next, x->prev). But there's no dllseg - the list is just x exposed + dlistrep for the rest.
+
+In RP_iter_2: t = y_289 (x->next). Both x and y_289 are individually exposed.
+
+Hmm, actually let me think about this differently. The invariant should use variables t and u, not explicit node names.
+
+Looking at the relationship:
+- At each RP: t is the tail of an exposed segment, u = t->next is the head of the remaining dlistrep
+- The exposed segment from x down to (and including) t is known
+
+Actually, I think the standard pattern for this DLL traversal is:
+
+```
+dllseg_shape(x, 0, t->prev, t) * dlistrep_shape(u, t)
+```
+
+Where:
+- dllseg_shape(x, 0, t->prev, t): segment from x to t, where the segment includes all nodes from x to the node before t. t is the endpoint marker (NOT in segment). The last node in segment has its next pointing to t.
+- dlistrep_shape(u, t): rest of list starting at u, with prev = t (which means t will be the prev of the first node u).
+
+Wait, let me check dllseg more carefully.
+
+dllseg_shape(x, xp, yp, y):
+- Base case: x == y && xp == yp && emp -- empty segment
+- Recursive: exists z, data_at(field_addr(x, next), z) * data_at(field_addr(x, prev), xp) * dllseg_shape(z, x, yp, y)
+
+So dllseg_shape(x, xp, yp, y) represents the segment from x to y (exclusive), where:
+- x is the start node
+- xp is x->prev 
+- yp is the last node in the segment
+- y is the endpoint marker
+
+The segment owns data_at for nodes from x up to (but not including) y. The last node in the segment is yp, and yp->next == y, yp->prev == (node before yp).
+
+At RP_pre_loop:
+- t = x, u = x->next (y_289)
+- The data_at's are for x (x->next, x->prev only)
+- dlistrep_shape(u, x) = dlistrep_shape(y_289, x)
+- So: the "segment" from x to t=x is empty (x == t)
+- And dlistrep_shape(u, t) = dlistrep_shape(y_289, x)
+
+At RP_iter_2:
+- t = y_289 (was u), u = y_297 (= t->next)
+- Data_at's are for x AND y_289 (both nodes exposed)
+- dlistrep_shape(u, t) = dlistrep_shape(y_297, y_289)
+
+So the invariant should be:
+- dllseg_shape(x, 0, t->prev, t) -- segment from x to t (t not included), x->prev = 0, last node's next = t
+- dlistrep_shape(u, t) -- rest of list from u = t->next, prev = t
+- dlistrep_shape(y, 0) -- y list frame
+
+Wait, does dllseg_shape(x, 0, t->prev, t) work?
+
+At pre_loop: t = x, so dllseg_shape(x, 0, x->prev, x) = dllseg_shape(x, 0, ?, x). When x != 0, and checking x == y? No, x == x, so it's the base case if x == t... 
+
+Wait, x == t would be true in pre_loop (t = x). dllseg_shape(x, 0, x->prev, x): need x == x (true) and x->prev == 0 (true only if x is head). Hmm, but xp would need to equal yp. The base case is `x == y && xp == yp`. So dllseg_shape(x, 0, xp, x) expands when x == x (true) but we need xp == yp which is xp == xp... so it should be emp when x == y and xp == yp.
+
+Wait no, in the base case definition: `dllseg_shape(x, xp, yp, y) = (x == y && xp == yp && emp)`. For pre_loop, x = x, y = t = x. So x == y is true. And if xp = 0 and yp = t->prev = x->prev. We need xp == yp, i.e., 0 == x->prev. Since x is the head, x->prev = 0, so 0 == 0 is true. So dllseg_shape(x, 0, x->prev, x) = emp at pre_loop.
+
+At iter_2: t = y_289, x != t. dllseg_shape(x, 0, t->prev, t) = dllseg_shape(x, 0, y_289->prev, y_289). Since y_289->prev = x (from the data_at), this is dllseg_shape(x, 0, x, y_289). Let me check if this unfolds correctly...
+
+dllseg_shape(x, 0, x, y_289) -- x != y_289, so unfold:
+exists z, data_at(x->next, z) * data_at(x->prev, 0) * dllseg_shape(z, x, x, y_289)
+
+Since x->next = y_289, z = y_289 (well, it unifies). So we get:
+data_at(x->next, y_289) * data_at(x->prev, 0) * dllseg_shape(y_289, x, x, y_289)
+
+Now dllseg_shape(y_289, x, x, y_289): is y_289 == y_289 (true), and xp (x) == yp (x) (true). So it's emp.
+
+Total: data_at(x->next, y_289) * data_at(x->prev, 0). That gives us the x node exposed, which matches RP_iter_2!
+
+But wait, RP_iter_2 also has data_at for y_289 (t): data_at(y_289->next, y_297) * data_at(y_289->prev, x). Those don't come from dllseg. They would need to come from... hmm.
+
+Actually wait. Let me re-read the RP_iter_2:
+
+SEP:
+data_at(&(y_289->next), struct list*, y_297)   -- t->next
+dlistrep_shape(y_297, y_289)                    -- rest from u
+data_at(&(y_289->prev), struct list*, x)        -- t->prev = x
+data_at(&(x->next), struct list*, y_289)        -- x->next
+data_at(&(x->prev), struct list*, 0)             -- x->prev = 0
++ stack bindings
++ y list
+
+So the structure is: x node exposed + dlistrep_shape(y_297, y_289). But where does data_at for y_289->prev and y_289->next come from?
+
+Actually, dlistrep_shape(y_297, y_289) when unfolded would give:
+data_at(y_297->next, ...) * data_at(y_297->prev, y_289) * dlistrep_shape(rest, y_297)
+
+But what about y_289? y_289 is the prev of y_297. The data_at for y_289->next = y_297 and y_289->prev = x... These must come from dlistrep_shape being unfolded at y_289. Wait, but dlistrep_shape(y_297, y_289) starts at y_297, not y_289.
+
+Hmm, I think I need to reconsider. Let me look at this from the perspective of what shape predicates are in the SEP.
+
+In RP_pre_loop:
+- data_at(&(x->next), struct list*, y_289)
+- dlistrep_shape(y_289, x)
+- data_at(&(x->prev), struct list*, 0)
+
+So this is: dlistrep_shape(x, 0) unfolded one level.
+
+In RP_iter_2:
+Looking at data_at items directly:
+- data_at(&(x->next), struct list*, y_289)   -- x.next
+- data_at(&(x->prev), struct list*, 0)        -- x.prev
+- data_at(&(y_289->next), struct list*, y_297) -- y_289.next
+- data_at(&(y_289->prev), struct list*, x)     -- y_289.prev
+- dlistrep_shape(y_297, y_289)                 -- rest
+
+This is dlistrep_shape(x, 0) unfolded TWO levels.
+
+At iter_3:
+- x's fields exposed
+- y_289's fields exposed
+- y_297's fields exposed
+- dlistrep_shape(y_302, y_297) -- rest, unfolded 3 levels
+
+So the pattern is: dlistrep_shape(x, 0) is being progressively unfolded. Each iteration exposes one more node.
+
+Now, the key variables:
+- t: the last exposed node
+- u: t->next (the first node of the remaining dlistrep)
+
+At pre_loop: t = x, u = x->next = y_289. dlistrep_shape(x,0) unfolded once.
+At iter_2: t = y_289, u = y_289->next = y_297. dlistrep_shape(x,0) unfolded twice.
+At iter_3: t = y_297, u = y_297->next = y_302. dlistrep_shape(x,0) unfolded 3 times.
+
+For the invariant, I need to express this in terms of program variables (t, u, x, y).
+
+The standard DLL traversal invariant for finding the tail would be:
+
+```
+dllseg_shape(x, 0, t->prev, t) * dlistrep_shape(u, t)
+```
+
+Let me verify this at each RP:
+
+At pre_loop (t = x, u = x->next = y_289):
+- dllseg_shape(x, 0, x->prev, x) = dllseg_shape(x, 0, 0, x) ... base case: x == x (true), 0 == 0 (true) → emp
+- dlistrep_shape(u, t) = dlistrep_shape(y_289, x)
+
+So SEP = emp * dlistrep_shape(y_289, x) = dlistrep_shape(y_289, x). But RP_pre_loop also has data_at(x->next, y_289) and data_at(x->prev, 0). So dlistrep_shape(y_289, x) is NOT the full picture.
+
+Hmm wait, dlistrep_shape(y_289, x) when unfolded:
+= (y_289 == 0 && emp) || exists t', data_at(y_289->next, t') * data_at(y_289->prev, x) * dlistrep_shape(t', y_289)
+
+But y_289 != 0 (we know x != 0 and x->next = y_289, but we don't know y_289 != 0 from PROP at pre_loop). 
+
+Actually, in RP_pre_loop, PROP only has (x@pre != 0). We don't know y_289 != 0. So dlistrep_shape(y_289, x) is the FOLDED form. The SEP of RP_pre_loop has:
+- data_at(&(x->next), ... , y_289) ← x->next field
+- dlistrep_shape(y_289, x)      ← rest starting at y_289 with prev=x
+- data_at(&(x->prev), ... , 0)  ← x->prev field
+
+So if I write invariant as:
+dllseg_shape(x, 0, t->prev, t) * dlistrep_shape(u, t)
+
+At pre_loop (t=x, u=x->next):
+dllseg_shape(x, 0, x->prev, x) -- x == x (yes), xp == yp... xp = 0, yp = ? 
+
+For the base case of dllseg_shape(x, 0, yp, t) with t=x:
+- dllseg_shape(x, 0, yp, x). Base: x==x (true), 0==yp? We need yp = t->prev = x->prev = 0. Since x is head, x->prev = 0. So 0==0, base case kicks in → emp.
+
+And dlistrep_shape(u, t) = dlistrep_shape(x->next, x).
+
+But then the question is: does dlistrep_shape(x->next, x), when unfolded, give the same as: data_at(x->next, y_289) * data_at(x->prev, 0) * dlistrep_shape(y_289, x)?
+
+NO! dlistrep_shape(x->next, x) gives data_at of (x->next)'s fields, not x's fields. Let me re-check:
+
+dlistrep_shape(l, p) = (l == 0 && emp) || exists t, data_at(field_addr(l, next), t) * data_at(field_addr(l, prev), p) * dlistrep_shape(t, l)
+
+So dlistrep_shape(y_289, x) unfolds (if y_289 != 0): data_at(y_289->next, t') * data_at(y_289->prev, x) * dlistrep_shape(t', y_289). This gives y_289's node, not x.
+
+The SEP of RP_pre_loop has:
+- data_at(x->next, y_289)   ← from unfolding dlistrep_shape(x, 0) once
+- data_at(x->prev, 0)       ← from unfolding dlistrep_shape(x, 0) once
+- dlistrep_shape(y_289, x)  ← the recursive part
+
+So the full picture at pre_loop is: dlistrep_shape(x, 0) unfolded once, which splits into x's data_at fields + dlistrep_shape(x->next, x).
+
+Now if my invariant is dllseg_shape(x, 0, t->prev, t) * dlistrep_shape(u, t):
+At pre_loop: dllseg_shape(x, 0, x->prev, x) * dlistrep_shape(x->next, x)
+= emp * dlistrep_shape(x->next, x)
+= dlistrep_shape(x->next, x)
+
+But dlistrep_shape(x->next, x) starts at x->next, not x. The actual RP has data_at for x AND dlistrep_shape at x->next. The dlistrep_shape(x->next, x) would fold back to data_at(x->next->next, ...) * data_at(x->next->prev, x) * dlistrep_shape(...), not to x->next and x->prev.
+
+So I think dllseg_shape + dlistrep_shape should be:
+
+dllseg_shape(x, 0, t, u) ? No, let me reconsider.
+
+Actually wait. Let me think about what the invariant should look like. 
+
+The state of the program is: we have a DLL from x to beyond. t is a cursor pointing at some node in this DLL. u = t->next. The invariant should capture that:
+1. x is the head of a DLL (x->prev = 0)
+2. From x to t (inclusive?) there is a path of nodes
+3. From u = t->next onwards is dlistrep_shape(u, t)
+
+Actually, I think the common pattern is:
+
+**dllseg_shape(x, 0, t, u)** : segment from x to u (exclusive), where the last node inside is t, so t->next = u. And x->prev = 0 (head).
+
+Let me check: dllseg_shape(x, xp, yp, y) where:
+- x = start node
+- xp = start node's prev
+- yp = last node in segment
+- y = endpoint marker (NOT in segment)
+
+Base: x == y && xp == yp → emp
+
+So dllseg_shape(x, 0, t, u):
+At pre_loop (t = x, u = x->next = y_289):
+- x == u? x == y_289? No, x->next = y_289 but x != y_289. So not base case.
+- Unfold: exists z, data_at(x->next, z) * data_at(x->prev, 0) * dllseg_shape(z, x, t, u)
+- With z = y_289: data_at(x->next, y_289) * data_at(x->prev, 0) * dllseg_shape(y_289, x, x, y_289)
+- Now dllseg_shape(y_289, x, x, y_289): y_289 == y_289 (true), xp = yp → x == x (true) → emp
+- Total: data_at(x->next, y_289) * data_at(x->prev, 0)
+
+That matches the data_at for x but misses dlistrep_shape(y_289, x). Hmm.
+
+Wait, but that's only dllseg_shape(x, 0, t, u) alone. The full invariant should be dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t). So:
+
+At pre_loop: dllseg_shape(x, 0, x, y_289) * dlistrep_shape(y_289, x)
+= data_at(x->next, y_289) * data_at(x->prev, 0) * dlistrep_shape(y_289, x)
+
+That's exactly RP_pre_loop's SEP (minus the stack/y bindings). 
+
+At iter_2 (t = y_289, u = y_297):
+dllseg_shape(x, 0, y_289, y_297) * dlistrep_shape(y_297, y_289)
+
+Let me unfold dllseg_shape(x, 0, y_289, y_297) fully:
+- x != y_297 (yes, x != x->next), so unfold:
+  data_at(x->next, z) * data_at(x->prev, 0) * dllseg_shape(z, x, y_289, y_297)
+  With z = y_289: data_at(x->next, y_289) * data_at(x->prev, 0) * dllseg_shape(y_289, x, y_289, y_297)
+- dllseg_shape(y_289, x, y_289, y_297): y_289 != y_297 (true, it's the next node, nonzero). 
+  Base check: y_289 == y_297? No. So unfold:
+  data_at(y_289->next, z') * data_at(y_289->prev, x) * dllseg_shape(z', y_289, y_289, y_297)
+  With z' = y_297: data_at(y_289->next, y_297) * data_at(y_289->prev, x) * dllseg_shape(y_297, y_289, y_289, y_297)
+- dllseg_shape(y_297, y_289, y_289, y_297): y_297 == y_297 (true), yp (= y_289) == yp (= y_289) (true) → emp
+- Total: data_at(x->next, y_289) * data_at(x->prev, 0) * data_at(y_289->next, y_297) * data_at(y_289->prev, x) * dlistrep_shape(y_297, y_289)
+
+That matches RP_iter_2 exactly (minus stack/y). 
+
+At iter_3 (t = y_297, u = y_302):
+dllseg_shape(x, 0, y_297, y_302) * dlistrep_shape(y_302, y_297)
+Unfolding gives: data_at(x->next, y_289) * data_at(x->prev, 0) * data_at(y_289->next, y_297) * data_at(y_289->prev, x) * data_at(y_297->next, y_302) * data_at(y_297->prev, y_289) * dlistrep_shape(y_302, y_297)
+
+Matches RP_iter_3. 
+
+So the SEP is: `dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t) * dlistrep_shape(y, 0)`
+
+Wait, but dllseg_shape(x, 0, t, u) — this has yp = t, y = u. So the last node in segment is t, and t->next = u. But is t in the segment? From the definition, the segment is from x to u (exclusive). So t is the last node IN the segment (since yp is the last node inside). Then u = t->next is the endpoint marker.
+
+Actually wait, at pre_loop, t = x. If dllseg_shape(x, 0, t, u) = dllseg_shape(x, 0, x, y_289), then:
+- x is both start and yp (last node inside)
+- y = y_289 is endpoint
+- This means the segment contains just x, and x->next = y_289
+
+That's correct! The segment from x to y_289 (exclusive) contains only x, with yp = x being the last (and only) node inside. And dlistrep_shape(y_289, x) covers the rest.
+
+Now for the PROP:
+
+**PROP constraints**:
+- RP_pre_loop: (x@pre != 0)
+- RP_iter_2: (y_289 != 0), (x@pre != 0)
+- RP_iter_3: (y_297 != 0), (y_289 != 0), (x@pre != 0)
+
+The PROP constraints are about which nodes are non-null. x != 0 is in all. y_289 != 0 appears from iter_2 onwards (meaning after entering loop, u was not null). y_297 != 0 appears from iter_3 onwards.
+
+For the invariant PROP:
+- x != 0 — always true (we're in the else branch)
+- t != 0 — t starts as x (!= 0) and becomes old u (which was != 0 to enter loop). So t != 0 should always hold in the loop.
+- u != 0 — this is the loop condition! u != 0 is the condition to enter/stay in loop. At the start of each iteration, if u != 0, we enter. But if u == 0, we exit. So the property "at the start of each iteration" means u may or may not be 0. But wait, at an RP, the condition check is about to happen. At pre_loop, cond=(u), we're about to check. At iter_2, cond=(u), we're about to check. 
+
+Hmm, so at the RPs, the PROP doesn't include u != 0 because it hasn't been decided yet. The PROP at pre_loop says x != 0. At iter_2, PROP says y_289 != 0 and x != 0. y_289 was the old value of u.
+
+Actually, the PROP constraints at the RPs represent what's KNOWN at that point. At iter_2, we know y_289 != 0 because we entered the loop on the first iteration (u was y_289 at that time, and it was non-null). But we don't know whether y_297 (current u) is != 0 or not — that's what the condition check will determine.
+
+So for the invariant PROP:
+- x != 0 — from code path (else branch, x != 0)
+- t != 0 — t = x initially (x != 0), then t = u which was != 0 to have entered loop
+- u == t->next — from line 13: u = t->next, and in loop body: t = u; u = t->next (so u is always t->next)
+
+Actually wait: in the loop body, the sequence is:
+```
+t = u;
+u = t->next;
+```
+After this, u == t->next holds. At the start (pre_loop), u = t->next from line 13.
+
+So `u == t->next` should be in the invariant. But per the SKILL.md note about dup_data_at_error: if a shape predicate already links u and t, omit u == t->next from PROP.
+
+Looking at our SEP: dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t). Does dllseg_shape(x, 0, t, u) link t and u? Yes! The last param y = u, and the last node inside (yp = t) has yp->next = y, i.e., t->next = u. So the relationship is already encoded in the shape predicate.
+
+But also, the dlistrep_shape(u, t) starts at u with prev = t. This also implicitly links u and t.
+
+So I should NOT include `u == t->next` in PROP, as it could cause dup_data_at_error.
+
+What about t != 0? t is the last node in dllseg. t starts as x (which we know is != 0). In the loop, t = u, and u became != 0 to have entered. So t != 0 should hold as loop invariant.
+
+What about u? u may be 0 (loop exit condition) or != 0 (loop continue). If u == 0, the loop exits, but dllseg with u == 0... would that be a problem?
+
+dllseg_shape(x, 0, t, 0): When u = 0, t->next = 0. This means t is the last node in the whole list (tail). dlistrep_shape(0, t): base case (l == 0, emp) → emp. So SEP = dllseg_shape(x, 0, t, 0), which covers the whole list.
+
+Actually, I should check: does dllseg shape need u != 0 or t != 0? Looking at the strategy rules and definitions, I think these work fine with null values as long as the base case matches.
+
+For the loop invariant PROP:
+- We should include: x != 0 (from code path)
+- t != 0 (derived)
+
+But wait, do we need t != 0? Let me think about whether it's needed for strategies to unfold. Looking at dllseg, the unfold rule likely needs the start node to be non-null. And dlistrep_shape needs its first arg to be non-null to unfold. Since u may be 0, we can't add u != 0 (it wouldn't be true on the last iteration).
+
+Let me think about what the minimal PROP is:
+- x != 0 — needed because we're in the else branch, and dllseg needs non-null start
+- t != 0 — needed for dllseg_shape(x, 0, t, u) where t is the yp parameter. Actually, t is the last node inside the segment. If t != 0, the segment can be fully traversed.
+
+Actually, let me reconsider. The PROP that's in every RP:
+- RP_pre_loop: x@pre != 0
+- RP_iter_2: y_289 != 0, x@pre != 0  
+- RP_iter_3: y_297 != 0, y_289 != 0, x@pre != 0
+
+The intersection of all RPs: {x@pre != 0}. But that's just x != 0.
+
+However, looking at the code path:
+1. We're in the else branch → x != 0
+2. t = x → t != 0 (derived from x != 0)
+3. u = t->next → u could be 0 or not
+
+So the invariant PROP should include at least: x != 0, t != 0.
+
+But wait, in RP_pre_loop, we only have (x@pre != 0). There's no explicit t != 0 or u != 0. But t = x, so t != 0 is implied by x != 0. 
+
+Let me check: should I include u == t->next in PROP? The SKILL.md mentions this could cause dup_data_at_error. The SEP `dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t)` already links t and u through dllseg (where yp=t, y=u means t->next = u). So I'll skip u == t->next.
+
+Now for has_permission:
+- x: appears as arg[0] of dllseg_shape → covered
+- y: appears as arg[0] of dlistrep_shape(y, 0) → covered
+- t: appears in dllseg as yp=arg[3]... is that covered? Actually, does t need has_permission? t is dereferenced in the loop body (t->next). But t is also the yp (last node inside segment) of dllseg. The dllseg predicate owns the data_at of all nodes inside it, including t. So t's fields are covered by dllseg. Covered.
+- u: appears as arg[0] of dlistrep_shape(u, t). Covered.
+
+So no has_permission needed.
+
+Let me draft the invariant:
+
+```
+/*@ Inv Assert x != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0)
+ */
+```
+
+Wait, but should I also include t != 0? Let me think about whether it's needed. The dllseg_shape has x as the first argument (non-null needed for unfold). t is yp, not directly the start. But when the loop body uses t->next, it needs t to have permission. The dllseg_shape(x, 0, t, u) has t as the last node INSIDE the segment. The segment owns data_at for all nodes inside it, including t. So as long as t is inside the segment, dllseg provides permission for t's fields.
+
+But wait, at the start of the loop: t = x, u = x->next. dllseg_shape(x, 0, x, x->next). t = x is the only node in the segment. x != 0 is needed for dllseg to unfold x's data_at. So x != 0 is sufficient.
+
+What about t != 0? Let's say we omit it. When the loop body does `u = t->next`, QCP needs to find data_at for t->next. Since t is inside dllseg, and t = x (non-null), the data_at for x->next is exposed. Good.
+
+After one iteration: t becomes old u, u becomes t->next (new u). The dllseg now includes two nodes: x and old_t (which was old u and is now new t). To access new t->next, dllseg needs to expose new t's data_at. But dllseg_shape(x, 0, t, u) = dllseg_shape(x, 0, y_289, y_297). Unfolding gives data_at for y_289 (t). To unfold, strategies check if the first arg is non-null (x != 0, checked), then unfold. But does the unfolding of dllseg reach t? 
+
+dllseg unfolds from the left: 
+dllseg_shape(x, 0, y_289, y_297)
+→ data_at(x->next, y_289) * data_at(x->prev, 0) * dllseg_shape(y_289, x, y_289, y_297)
+→ y_289 != y_297, so unfold again:
+   data_at(y_289->next, y_297) * data_at(y_289->prev, x) * dllseg_shape(y_297, y_289, y_289, y_297)
+→ y_297 == y_297 → emp
+
+So yes, dllseg can unfold to expose t's fields without t != 0 being in PROP.
+
+Actually, wait. For the first unfold step, we need x != 0. For the second unfold, we need y_289 != 0. But y_289 = t, and t may or may not be 0. BUT wait, at iter_2, we know y_289 != 0 because we entered the loop (u was y_289 and it was non-null). So QCP might need t != 0 in PROP to unfold dllseg past x.
+
+Hmm, but actually the strategies handle this. Let me think... The strategy unfolds dllseg from left to right. At each step, it uses the first argument's non-nullness to expose its data_at. If dllseg_shape(y_289, x, y_289, y_297), then first arg is y_289. To unfold this, we need y_289 != 0. At this point, y_289 has been reached during traversal.
+
+But does QCP automatically know y_289 != 0 from the code context? In the program, we only enter this RHS of dllseg if a loop iteration happened (i.e., if u != 0 at the start). But QCP may need the PROP constraint explicitly.
+
+Let me include t != 0 in PROP. Actually, I just realized: t starts as x (!= 0 from code path) and then becomes u (which must be != 0 to have entered the loop). So t != 0 always holds in the loop.
+
+But wait, what about after the loop? The invariant should hold before each iteration. After the loop, t is the last node (tail), u is 0 (or actually, u is whatever t->next was). After the loop: t is the last node, u = t->next = 0 (since u was the loop condition and it became 0). Then t->next = y. In this case, t != 0 holds.
+
+OK let me also check: is `t != 0` validated against all RPs?
+- RP_pre_loop: t = x, PROP says x != 0, so t != 0 ✓
+- RP_iter_2: t = y_289, PROP says y_289 != 0, so t != 0 ✓
+- RP_iter_3: t = y_297, PROP says y_297 != 0, so t != 0 ✓
+
+Great, t != 0 holds in all RPs.
+
+Let me finalize:
+
+```
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0)
+ */
+```
+
+Wait, but the `Ensure` in the original code is `dlistrep_shape(__return, 0)`. After our modifications (--ensure-emp), it becomes `emp`. But the invariant needs to work with the original Ensure for QCP to verify.
+
+Actually, let me re-read the SKILL.md workflow. In step 1.1, `--ensure-emp` replaces Ensure with emp. This is for the unrolled version (step 1.2 symexec). But in step 3.2, when verifying the invariant, it uses the infilled file (not with --ensure-emp). So the Ensure in the infilled file would still be the original `dlistrep_shape(__return, 0)`.
+
+Hmm wait, but step 3.1 says "Replace /* INFILL */ with /*@ Inv Assert <invariant> */" and "Save to tmp/<name>_inv.c". The _inv.c file is based on the ORIGINAL input file, not the unrolled one. So it should have the original Ensure.
+
+Let me write the infilled file. I'll take the original input and replace /* INFILL */ with the invariant.
+
+Now, let me also think about what PROP gets produced by dllseg_shape(x, 0, t, u) at different points. Looking at the RP states again, I notice:
+
+RP_pre_loop: The LOCALS include `(&u == u_286_addr)`, etc. The variable u holds y_289 at this point.
+
+Let me also double-check: does the invariant need `u == t->next`? If I don't include it, QCP might not know that u equals t->next. But the dllseg has yp=t, y=u, which in the definition implies t->next = u (via data_at(t->next, ...)). When dllseg unfolds, it produces data_at(t->next, u). So QCP can figure out u == t->next from the predicate. Including it explicitly would be redundant and potentially cause dup_data_at_error.
+
+OK, let me write the invariant file and verify.
+
+[TEXT]
+Now I have the states and the predicate reference. Let me analyze the diff to build the invariant.
+
+**Analysis**:
+- **Loop**: DLL traversal to find the tail. `t` advances, `u = t->next`.
+- **RP_pre_loop** (t=x, u=x->next): One node exposed (x), dlistrep from u
+- **RP_iter_2** (t=y_289, u=y_297): Two nodes exposed (x, y_289), dlistrep from u
+- **RP_iter_3** (t=y_297, u=y_302): Three nodes exposed, dlistrep from u
+
+**Pattern**: `dllseg_shape(x, 0, t, u)` unfolds into exposed nodes up to `t`, and `dlistrep_shape(u, t)` covers the rest. `dlistrep_shape(y, 0)` is the frame (untouched y list).
+
+**PROP**: x != 0 (code path), t != 0 (validated across all RPs).
+
+**Step 3.1: Write invariant file and verify**
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_inv.c
+
+============================================================
+[THINKING] (25 chars)
+============================================================
+Now run the verification.
+
+[TEXT]
+**Step 3.2: Verify via symexec**
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_goal.v /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_manual.v
+
+============================================================
+[THINKING] (31 chars)
+============================================================
+Good, now run the verification.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_verify.log
+
+============================================================
+[THINKING] (33 chars)
+============================================================
+Let me check the gate conditions.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_verify.log
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/tmp/app_proof_manual.v
+
+============================================================
+[THINKING] (86 chars)
+============================================================
+Symexec passed and 0 Admitted goals. QCP_VERIFIED: YES!
+
+Now let me output the result.
+
+[TEXT]
+**QCP_VERIFIED: YES**. 0 Admitted goals. Now let me write the final result.
+
+[TOOL: Bash]
+Bash: cat > /home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/result.txt << 'ENDOFFILE'
+QCP_VERIFIED: YES
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list * append(struct list * x, struct list * y)
+/*@ Require dlistrep_shape(x, 0) * dlistrep_shape(y, 0)
+    Ensure  dlistrep_shape(__return, 0)
+ */
+{
+    struct list *t, *u;
+    if (x == 0) {
+        return y;
+    } else {
+        t = x;
+        u = t->next;
+        /*@ Inv Assert x != 0 && t != 0 &&
+            dllseg_shape(x, 0, t, u) *
+            dlistrep_shape(u, t) *
+            dlistrep_shape(y, 0)
+         */
+        while (u) {
+            t = u;
+            u = t->next;
+        }
+        t->next = y;
+        if (y) {
+            y->prev = t;
+        }
+        return x;
+    }
+}
+```
+ENDOFFILE
+
+============================================================
+[THINKING] (958 chars)
+============================================================
+The pipeline completed successfully. Let me verify the result file looks correct and provide a summary.
+
+The invariant is:
+```
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0)
+ */
+```
+
+Key design decisions:
+- **dllseg_shape(x, 0, t, u)**: Segment from x (head, prev=0) to u (exclusive), with t being the last node inside. At pre_loop (t=x), this is empty; as traversal progresses, more nodes accumulate in the segment.
+- **dlistrep_shape(u, t)**: Rest of the list starting at u=t->next, with prev=t.
+- **dlistrep_shape(y, 0)**: Frame item — the untouched y list.
+- **x != 0, t != 0**: Code-path-derived PROP, validated across all RPs.
+- No `u == t->next` in PROP (dllseg already encodes this relationship, avoiding dup_data_at).
+- No `has_permission` needed (all pointer variables are covered by shape predicate arguments).
+
+The result matches all 3 RPs and verifies with 0 Admitted goals.
+
+[TEXT]
+**Result**: QCP_VERIFIED: YES on first attempt (0 retries needed).
+
+The invariant inferred is:
+```c
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0)
+ */
+```
+
+**Key findings**:
+- **SEP**: `dllseg_shape(x, 0, t, u)` captures the traversed segment (x through t inclusive), `dlistrep_shape(u, t)` covers the unvisited tail, `dlistrep_shape(y, 0)` is the frame (untouched y list). This matches all 3 recording points when unfolded.
+- **PROP**: `x != 0` (code path via else branch) and `t != 0` (derived, validated across all RPs). No `u == t->next` needed -- `dllseg_shape` already encodes the t-to-u link.
+- **No `has_permission` needed**: All pointer variables (x, y, t, u) are covered by shape predicate arguments.
+- 0 Admitted goals in `proof_manual.v`, 0 retries.
+
+Output written to: `/home/tzh66/loop-invariant-inference/test_results_20260523_065416/System/GlibC/changed_codes/list/append/result.txt`

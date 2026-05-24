@@ -1,0 +1,5 @@
+QCP_VERIFIED: YES
+RETRIES: 2
+MANUAL_ADMITTED: 0
+AUTO_ADMITTED: 0
+INVARIANT: w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t) * has_permission(&p) * has_permission(&q)

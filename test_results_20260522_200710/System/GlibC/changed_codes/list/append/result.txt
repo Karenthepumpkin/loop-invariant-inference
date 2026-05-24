@@ -1,0 +1,10 @@
+FILE: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/append/app.c
+QCP_VERIFIED: YES
+INVARIANT: /*@ Inv Assert t != 0 &&
+    dlistrep_shape(y, 0) *
+    dlistrep_shape(u, t) *
+    dllseg_shape(x, 0, t, u)
+ */
+RETRIES: 3
+MANUAL_ADMITTED: 0
+AUTO_ADMITTED: 10

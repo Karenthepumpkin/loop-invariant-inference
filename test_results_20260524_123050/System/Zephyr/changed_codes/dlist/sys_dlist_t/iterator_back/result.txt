@@ -1,0 +1,27 @@
+QCP_VERIFIED: YES
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list *iter_back(struct list *l, struct list *front)
+/*@ With l_head
+      Require dllseg_shape(front, 0, l_head, l) * dlistrep_shape(l, l_head)
+    Ensure  dlistrep_shape(__return, 0)
+ */
+{
+    struct list *p;
+    if (l == 0) {
+      return front;
+    }
+  	else {
+    	p = l;
+     /*@ Inv Assert exists p_prev,
+            dllseg_shape(front, 0, p_prev, p) *
+            dlistrep_shape(p, p_prev)
+      */
+    	while (p != front) {
+      	  p = p ->prev;
+      }
+    }
+    return p;
+}
+```

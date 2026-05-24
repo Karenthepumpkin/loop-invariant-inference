@@ -1,0 +1,14 @@
+QCP_VERIFIED: YES
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list *iter(struct list *l)
+{
+    struct list *p = l;
+    /*@ Inv Assert dlistrep_shape(l, 0) * has_permission(&p) */
+    while (p) {
+        p = p->next;
+    }
+    return l;
+}
+```

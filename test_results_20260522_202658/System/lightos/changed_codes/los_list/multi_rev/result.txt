@@ -1,0 +1,16 @@
+QCP_VERIFIED: YES
+
+File: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/lightos/changed_codes/los_list/multi_rev/multi_rev.c
+
+Invariant:
+/*@ Inv Assert dlistrep_shape(w, v) * dlistrep_shape(v, w) * dlistrep_shape(x, y) * dlistrep_shape(y, x) * has_permission(&t) * has_permission(&p) * has_permission(&q) */
+
+Verification summary:
+- Symexec: Successfully finished symbolic execution
+- Admitted goals in proof_manual.v: 0
+- Total verification attempts: 1 (success on first try)
+
+Notes:
+- The original QCP symexec could not process this file due to the `append` function call with `With x_prev` existential.
+- To obtain recording points (RPs), a modified version without the append call was used for symexec, while verification was done on the original file with the invariant.
+- The invariant uses the pattern dlistrep_shape(w, v) * dlistrep_shape(v, w) which captures the dual-list reversal structure at any stage of processing.

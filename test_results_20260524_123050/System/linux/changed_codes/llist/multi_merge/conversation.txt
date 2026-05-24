@@ -1,0 +1,1623 @@
+
+============================================================
+[THINKING] (515 chars)
+============================================================
+Let me understand the task. The user wants me to:
+
+1. Read SKILL.md to understand the workflow
+2. Process a specific C file: `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/llist/multi_merge/multi_merge.c`
+3. Use the SKILL.md workflow to infer loop invariants
+4. Save results to `/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/`
+5. Max 2 retries, no full log
+
+Let me start by reading SKILL.md and the target C file.
+
+[TEXT]
+I'll start by reading the SKILL.md and the target C file in parallel.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/SKILL.md
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/llist/multi_merge/multi_merge.c
+
+============================================================
+[THINKING] (2529 chars)
+============================================================
+Let me analyze this task carefully.
+
+The user wants me to apply the SKILL.md workflow to infer loop invariants for `multi_merge.c`. Let me understand the code:
+
+1. This is an SLL (singly-linked list) with `sll_nodata_def.h` header
+2. The function `multi_merge` takes three linked lists (x, y, z) and merges them
+3. The loop body:
+   - If `u` is non-null:
+     - If `y` is non-null: set `t->next = y`, advance `t = y`, advance `y = y->next`
+     - Else: merge `u` and `z`, set `t->next = u`, return `x`
+     - If `z` is non-null: set `t->next = z`, advance `t = z`, advance `z = z->next`
+     - Else: merge `u` and `y`, set `t->next = u`, return `x`
+     - Then: `t->next = u`, `t = u`, `u = u->next`
+   - So in each iteration, the loop interleaves nodes from y and z into the traversal of u
+
+Wait, let me re-read the code more carefully:
+
+```c
+struct list *multi_merge(struct list *x , struct list *y, struct list *z)
+/*@ Require listrep(x) * listrep(y) * listrep(z)
+    Ensure  listrep(__return)
+ */
+{
+    struct list *t,*u;
+    if (x == 0) {
+      t = merge(y,z);
+      return t; 
+    }
+    else {
+      t = x;
+      u = t->next;
+      /* INFILL */
+      while (u) {
+        if (y) {
+          t -> next = y;
+          t = y;
+          y = y -> next;
+        }
+        else {
+          u = merge(u , z);
+          t -> next = u;
+          return x;   
+        }
+        if (z) {
+          t -> next = z;
+          t = z;
+          z = z -> next;
+        }
+        else {
+          u = merge(u , y);
+          t -> next = u;
+          return x;
+        }
+        t -> next = u;
+        t = u;
+        u = u -> next;
+      }
+  }
+  t->next = merge(y,z);
+  return x;
+}
+```
+
+So the loop:
+1. Checks if `u` is non-null (u is the "next" pointer in the x list)
+2. If y exists: insert y's node after t, advance t to y, advance y
+3. Otherwise: merge u with z, link, return x
+4. If z exists: insert z's node after t, advance t to z, advance z
+5. Otherwise: merge u with y, link, return x
+6. Then: t->next = u, t = u, u = u->next
+
+So the invariant needs to track: `x`, `t`, `u`, `y`, `z`.
+
+The structure is:
+- `x` is the head of the list being built
+- `t` is the current tail
+- `u` is the remaining portion of the original x list (after the node pointed to by t)
+- `y` and `z` are the remaining portions of the y and z lists
+
+The invariant structure for SLL (sll_nodata):
+- Predicate: `sll_nodata(head)` or `sll_nodata(head, ...)` — I need to check the reference
+
+Let me read the SLL nodata reference first, and also set up the directories.
+
+[TEXT]
+Let me read the SLL nodata reference and set up the directories.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/references/sll_nodata.md
+
+[TOOL: Bash]
+Bash: mkdir -p /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/{workspace,tmp} && ls /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/
+
+============================================================
+[THINKING] (6535 chars)
+============================================================
+Now I understand the predicates:
+- `listrep(l)`: Complete SLL from `l` to NULL
+- `lseg(x, y)`: SLL segment from `x` to `y` (y excluded)
+
+The code uses `listrep` in the Require/Ensure. The invariant will need to use `lseg` and `listrep` to track the traversal.
+
+Let me re-analyze the code:
+
+```c
+struct list *multi_merge(struct list *x , struct list *y, struct list *z)
+/*@ Require listrep(x) * listrep(y) * listrep(z)
+    Ensure  listrep(__return)
+ */
+{
+    struct list *t,*u;
+    if (x == 0) {
+      t = merge(y,z);
+      return t; 
+    }
+    else {
+      t = x;
+      u = t->next;
+      /* INFILL */
+      while (u) {
+        if (y) {
+          t -> next = y;
+          t = y;
+          y = y -> next;
+        }
+        else {
+          u = merge(u , z);
+          t -> next = u;
+          return x;   
+        }
+        if (z) {
+          t -> next = z;
+          t = z;
+          z = z -> next;
+        }
+        else {
+          u = merge(u , y);
+          t -> next = u;
+          return x;
+        }
+        t -> next = u;
+        t = u;
+        u = u -> next;
+      }
+  }
+  t->next = merge(y,z);
+  return x;
+}
+```
+
+So before the loop:
+- `t = x` (x is non-null)
+- `u = t->next` = `x->next`
+
+The loop:
+- `while (u)` - traverse while u is not null
+  - If y: insert y's node between t and u, advance y
+  - If z: insert z's node between t and u, advance z
+  - Then: `t->next = u`, `t = u`, `u = u->next` - advance t and u
+
+Each iteration:
+1. If y exists: insert one node from y between t and u
+2. If z exists: insert one node from z between t and u
+3. Move forward: t advances to u, u advances to u->next
+
+The loop interleaves nodes from y and z into the x list traversal:
+- After each full iteration (both y and z paths taken), we've inserted one y node and one z node before advancing to the next x node
+- The resulting list structure: x -> ... -> t (with t->next = u), and lists y, z remain
+
+The invariant structure:
+- `x` is the head of the result list (fixed)
+- `t` is the current cursor/tail in the result list
+- `u` is the next node in the original x list
+- `y` and `z` are remaining lists to be interleaved
+
+The result list from x to t (excluding t) is a segment: `lseg(x, t)`... wait no. The result list IS the built list from x to t... but at the beginning, t = x, so it's just one node.
+
+Actually let me think about the list structure:
+- Before loop: `t = x`, `u = x->next`. So we have `data_at(field_addr(x, next), ..., u) * listrep(u)` i.e., `listrep(x)`
+- Each iteration: we manipulate t->next, insert y/z nodes, then move t and u forward
+
+At the loop head:
+- We have some prefix from x to t that is built
+- t points to u (via t->next)
+- u onwards is the original x list
+- y and z are remaining lists
+
+Wait, but we also insert y/z nodes into the result list between t and u. So at the loop head:
+- Actually, let me think about this more carefully.
+
+At the START of each loop iteration:
+- `t` is some node (initially x)
+- `u` is t->next (initially x->next, then after advancing, it's the next node in the original x list)
+
+During the iteration:
+- If y exists: t->next = y, then (t becomes y, y advances), so now t = old_y, and t->next still points to old_y->next
+- If z exists: then t->next = z, t = z, z advances
+- Then t->next = u, t = u, u = u->next
+
+So after each iteration:
+- t has moved to the old u
+- u has moved to old u->next
+- If y existed: one y node was inserted between old_t and old_u
+- If z existed: one z node was inserted between old_t and old_u
+
+Wait, let me trace more carefully with the FIRST iteration:
+
+BEFORE loop:
+- t = x
+- u = x->next
+
+Iteration 1 (assuming both y and z are non-null):
+1. y is non-null: t->next = y (so x->next now points to y_old)
+2. t = y (t now points to first node of y)
+3. y = y->next (y advances)
+4. z is non-null: t->next = z (so y_old->next now points to z_old)
+5. t = z (t now points to first node of z)
+6. z = z->next (z advances)
+7. t->next = u (so z_old->next now points to u = x->next_original)
+8. t = u (t = x->next_original)
+9. u = u->next (u = original x->next->next)
+
+So after iteration 1:
+- The list now is: x -> y_0 -> z_0 -> x_1 -> x_2 -> ...
+- t = x_1
+- u = x_2
+- y = y_1 (second node of y)
+- z = z_1 (second node of z)
+
+At the loop head, the state is:
+- lseg(x, t): but wait, lseg(x, t) means "segment from x to t excluding t". But our result list currently goes from x through to u (t happens to be one of the nodes in between).
+
+Actually wait, I need to think about this differently. The SEP shape for an SLL needs to capture the full heap ownership.
+
+Let me think in terms of what we have at each loop iteration START:
+
+We have several sub-lists:
+1. A "built" segment from x's first node up to t (including t? excluding?). At the start of the loop, t points to some node that is the current end of the built portion.
+2. t->next = u, and u is the head of the remaining original x list
+3. y and z are remaining lists
+
+So the full heap:
+- lseg(x, t_next?) — the prefix of the built list, but this gets complicated because nodes from y and z have been inserted.
+
+Actually, let me reconsider. The structure at the loop head is:
+
+x is the head. t is some node. u = t->next. y and z are remaining lists.
+
+The built result list from x to t can be described as some segment.
+After t, we have u (which is part of the original x list).
+Actually no, let me reconsider again. t has been moving forward. After each iteration, t = u and u = u->next. But we also insert y and z nodes. So t is not always a node from the x list - it can be a y or z node that we just inserted.
+
+Hmm, let me re-trace more carefully from a specific state.
+
+PRE-LOOP STATE:
+- x points to first node of x-list
+- t = x
+- u = x->next
+- y points to first node of y-list
+- z points to first node of z-list
+
+At loop head (RP_pre_loop):
+- We own: listrep(x) * listrep(y) * listrep(z)
+- t = x, u = x->next
+
+Let me think about what the SEP looks like at this point.
+listrep(x) unfolds to: data_at(field_addr(x, next), ..., u) * listrep(u) where u = x->next
+
+Actually, let me just proceed with the workflow step by step: unroll, symexec, parse, then analyze.
+
+For the symexec step, I need the Coq lib. The header is `sll_nodata_def.h`, so lib = `sll_nodata_shape_lib`.
+
+Let me proceed with step 1: unroll.
+
+Before that, note that the file uses `/* INFILL */` marker. The unroll script should handle `while` loops.
+
+Let me also check: the file includes `/home/tzh66/qcp_skill/infra/sll_nodata_def.h`. The SKILL.md says input files are already QCP-formatted. That's fine.
+
+Let me now run the pipeline.
+
+[TEXT]
+Good. The predicates are:
+- `listrep(l)` — complete SLL from `l` to NULL
+- `lseg(x, y)` — SLL segment from `x` to `y` (y excluded)
+
+Now let me execute the workflow. Starting with Step 1.1: unroll the loop.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/llist/multi_merge/multi_merge.c --output /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_unrolled.c --ensure-emp
+
+============================================================
+[THINKING] (47 chars)
+============================================================
+Good, unroll succeeded. Now let me run symexec.
+
+[TEXT]
+Step 1.2: Run symexec.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.sll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_unrolled.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (118 chars)
+============================================================
+The output is very large (794KB). Let me check if it finished successfully by tailing the log, and also parse the log.
+
+[TEXT]
+Let me check the tail of the log and parse it.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_symexec.log
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py \
+  --file /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_symexec.log \
+  --out-states /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_states.txt \
+  --out-json /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_states.json
+
+============================================================
+[THINKING] (147 chars)
+============================================================
+Good, symexec succeeded and we have 3 recording points (RP_pre_loop, RP_iter_2, RP_iter_3). Now let me read the parsed states to analyze the diffs.
+
+[TEXT]
+Both gates passed. Now let me read the full parsed states for diff analysis.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_states.txt
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/workspace/multi_merge_unrolled.c
+
+============================================================
+[THINKING] (29013 chars)
+============================================================
+Now let me carefully analyze the recording points to understand the loop state evolution.
+
+### RP_pre_loop (line 1474, #1)
+
+exists: y_307
+
+PROP:
+- (x@pre != 0)
+
+LOCAL:
+- (&u == u_300_addr)
+- (&t == t_297_addr)
+- (&x == x_289_addr)
+- (&y == y_286_addr)
+- (&z == z_283_addr)
+
+SEP:
+```
+data_at ( &(x@pre->next) , struct list* , y_307 )    # x->next = y_307
+listrep (y_307)                                        # rest of x list
+data_at ( u_300_addr , struct list* , y_307 )          # u = y_307 (= x->next)
+data_at ( t_297_addr , struct list* , x@pre )           # t = x
+data_at ( z_283_addr , struct list* , z@pre )           # z = z@pre
+data_at ( y_286_addr , struct list* , y@pre )           # y = y@pre
+data_at ( x_289_addr , struct list* , x@pre )           # x = x@pre
+listrep (y@pre)                                         # y list
+listrep (z@pre)                                         # z list
+```
+
+So before the loop:
+- t = x, u = x->next (= y_307)
+- x list: x -> y_307 -> ... 
+- y list: y@pre -> ...
+- z list: z@pre -> ...
+
+### RP_iter_2 (line 5988, #2)
+
+exists: y_307, y_315, y_324, y_333
+
+PROP:
+- (y_307 != 0)
+- (x@pre != 0)
+- (y@pre != 0)
+- (z@pre != 0)
+
+LOCAL: same as pre_loop
+
+SEP:
+```
+data_at ( &(y_307->next) , struct list* , y_333 )      # y_307->next = y_333 (where y_307 is the original x->next)
+listrep (y_333)                                         # rest of x list after y_307->next
+data_at ( &(z@pre->next) , struct list* , y_307 )      # z@pre->next = y_307 (= original x->next)
+listrep (y_324)                                         # z list remainder (z@pre->next->next...)
+data_at ( &(y@pre->next) , struct list* , z@pre )      # y@pre->next = z@pre
+listrep (y_315)                                         # y list remainder (y@pre->next->next...)
+data_at ( &(x@pre->next) , struct list* , y@pre )      # x@pre->next = y@pre
+data_at ( u_300_addr , struct list* , y_333 )           # u = y_333
+data_at ( t_297_addr , struct list* , y_307 )           # t = y_307 (= x->next original)
+data_at ( z_283_addr , struct list* , y_324 )           # z = y_324
+data_at ( y_286_addr , struct list* , y_315 )           # y = y_315
+data_at ( x_289_addr , struct list* , x@pre )           # x = x@pre
+```
+
+Let me understand what happened in iteration 1:
+- Both y and z were non-null
+- Started: t = x, u = x->next (= y_307)
+- y branch: t->next = y (x->next = y@pre), t = y@pre... wait no.
+
+Let me re-read the loop body:
+```c
+if (y) {
+    t -> next = y;     // x->next = y@pre
+    t = y;             // t = y@pre
+    y = y -> next;     // y = y@pre->next
+}
+```
+
+Then:
+```c
+if (z) {
+    t -> next = z;     // y@pre->next = z@pre
+    t = z;             // t = z@pre
+    z = z -> next;     // z = z@pre->next
+}
+```
+
+Then:
+```c
+t -> next = u;  // z@pre->next = y_307
+t = u;          // t = y_307
+u = u -> next;  // u = y_333 (= y_307->next)
+```
+
+So after iteration 1:
+- x@pre->next = y@pre (was y_307, now y@pre)
+- y@pre->next = z@pre (was whatever was originally, now z@pre)  
+- z@pre->next = y_307 (was whatever, now y_307 = original x->next)
+- t = y_307 (= original x->next)
+- u = y_333 (= y_307->next)
+- y = y@pre->next (= y_315)
+- z = z@pre->next (= y_324)
+- x = x@pre
+
+Now the SEP in RP_iter_2:
+```
+data_at ( &(x@pre->next) , struct list* , y@pre )      # x->next = y@pre ✓
+data_at ( &(y@pre->next) , struct list* , z@pre )      # y@pre->next = z@pre ✓
+data_at ( &(z@pre->next) , struct list* , y_307 )      # z@pre->next = y_307 ✓
+data_at ( &(y_307->next) , struct list* , y_333 )      # y_307->next = y_333 ✓
+```
+
+And the shape predicates:
+```
+listrep (y_333)     # rest of x list after y_333
+listrep (y_324)     # rest of z list
+listrep (y_315)     # rest of y list
+```
+
+And stack bindings:
+```
+data_at ( u_300_addr , struct list* , y_333 )  # u = y_333
+data_at ( t_297_addr , struct list* , y_307 )  # t = y_307
+data_at ( z_283_addr , struct list* , y_324 )  # z = y_324
+data_at ( y_286_addr , struct list* , y_315 )  # y = y_315
+data_at ( x_289_addr , struct list* , x@pre )  # x = x@pre
+```
+
+So in RP_iter_2:
+- x = x@pre (unchanged head)
+- x->next = y@pre (first node of y list got inserted after x)
+- y@pre->next = z@pre (first node of z list got inserted after y@pre)
+- z@pre->next = y_307 (which was original x->next)
+- y_307->next = y_333 (original x->next->next)
+- t = y_307
+- u = y_333
+- y = y_315 (= y@pre->next, the "rest" of y list)
+- z = y_324 (= z@pre->next, the "rest" of z list)
+
+The heap chain: x@pre -> y@pre -> z@pre -> y_307 -> y_333 -> listrep(y_333)
+
+### RP_iter_3 (line 11683, #3)
+
+exists: y_307 y_315 y_324 y_333 y_342 y_351 y_360
+
+PROP:
+- (y_333 != 0)
+- (y_307 != 0)
+- (x@pre != 0)
+- (y@pre != 0)
+- (z@pre != 0)
+- (y_315 != 0)
+- (y_324 != 0)
+
+SEP:
+```
+data_at ( &(y_333->next) , struct list* , y_360 )      # y_333->next = y_360
+listrep (y_360)                                         # rest of x list after y_333->next
+data_at ( &(y_324->next) , struct list* , y_333 )      # y_324->next = y_333
+listrep (y_351)                                         # rest of z list
+data_at ( &(y_315->next) , struct list* , y_324 )      # y_315->next = y_324
+listrep (y_342)                                         # rest of y list
+data_at ( &(y_307->next) , struct list* , y_315 )      # y_307->next = y_315
+data_at ( &(z@pre->next) , struct list* , y_307 )      # z@pre->next = y_307
+data_at ( &(y@pre->next) , struct list* , z@pre )      # y@pre->next = z@pre
+data_at ( &(x@pre->next) , struct list* , y@pre )      # x@pre->next = y@pre
+data_at ( u_300_addr , struct list* , y_360 )           # u = y_360
+data_at ( t_297_addr , struct list* , y_333 )           # t = y_333
+data_at ( z_283_addr , struct list* , y_351 )           # z = y_351
+data_at ( y_286_addr , struct list* , y_342 )           # y = y_342
+data_at ( x_289_addr , struct list* , x@pre )           # x = x@pre
+```
+
+So after iteration 2:
+- x@pre->next = y@pre (same as iter_2)
+- y@pre->next = z@pre (same as iter_2)
+- z@pre->next = y_307 (same as iter_2)
+- y_307->next = y_315 (NEW: was original y@pre->next)
+- y_315->next = y_324 (NEW: was original z@pre->next)
+- y_324->next = y_333 (NEW: z@pre->next now points to y_333)
+- y_333->next = y_360 (was y_307->next->next? wait...)
+
+Wait, in iter_2:
+- t = y_307, u = y_333
+
+In iter_3 after the second iteration:
+- t was y_307, u was y_333
+- y branch: if y (=y_315) exists -> t->next = y_315 (so y_307->next = y_315), t = y_315, y = y_315->next (=y_342)
+- z branch: if z (=y_324) exists -> t->next = z (=y_324) (so y_315->next = y_324), t = y_324, z = y_324->next (=y_351)
+- Then t->next = u (y_324->next = y_333), t = y_333, u = y_333->next (=y_360)
+
+So after iteration 2:
+- y_307->next = y_315 (was y_333, now y_315: y node inserted)
+- y_315->next = y_324 (z node inserted after y node)
+- y_324->next = y_333 (links back to original u)
+- t = y_333
+- u = y_360 (= y_333->next)
+- y = y_342 (= y_315->next = original y's second next)
+- z = y_351 (= y_324->next = original z's second next)
+
+Now the heap chain: 
+x@pre -> y@pre -> z@pre -> y_307 -> y_315 -> y_324 -> y_333 -> y_360 -> listrep(y_360)
+
+And remaining lists:
+listrep(y_342) = y@pre->next->next... = remaining y list
+listrep(y_351) = z@pre->next->next... = remaining z list
+
+---
+
+Now let me think about the invariant. The loop invariant needs to describe the state at the loop head.
+
+At the loop head:
+- x = x@pre (fixed head)
+- t is some node (the node whose next field is currently the cursor for insertion)
+- u = t->next (the node after t in the traversal)
+- y and z are remaining lists
+
+But this is tricky - the nodes between x and t include some mix of original x nodes, y nodes, and z nodes. The structure is not a simple lseg from x to t.
+
+In RP_pre_loop: the heap chain is x@pre -> y_307 -> listrep(y_307). And y@pre and z@pre are separate lists.
+
+In RP_iter_2: the heap chain is x@pre -> y@pre -> z@pre -> y_307 -> y_333 -> listrep(y_333). And y_315 and y_324 are separate lists.
+
+In RP_iter_3: the heap chain is x@pre -> y@pre -> z@pre -> y_307 -> y_315 -> y_324 -> y_333 -> y_360 -> listrep(y_360). And y_342 and y_351 are separate lists.
+
+So what's happening is:
+- We interleave y and z nodes between t and u
+- Then advance t to u and u to u->next
+
+The pattern in the SEP:
+- data_at for fields connecting the chain from x@pre through all the inserted nodes
+- listrep for the remaining portions of y, z, and the original x lists
+
+This is a complex traversal. The invariant needs to express:
+- x is the head of the built list
+- t is a node somewhere in the built list
+- u = t->next (some node further along)
+- y and z are remaining lists
+
+Actually, let me think about this differently. The loop body:
+1. If y exists: insert one y node between t and u
+2. If z exists: insert one z node between t and u
+3. Advance: t = u, u = u->next
+
+So t is NOT a fixed node in the original x list - t is the "current position" in the traversal, and it can be any node (original x, inserted y, or inserted z).
+
+The key insight: between x and t, we have a fully built segment of the result. After t, we have u (which is the next node) and lists y, z.
+
+Actually, the entire heap at the loop head can be described as:
+1. A segment from x to t: lseg(x, t) — this covers x and all nodes inserted/modified up to (but not including) t
+2. t itself with t->next = u: data_at(field_addr(t, next), ..., u)
+3. The rest of the chain from u: listrep(u)
+4. Remaining y list: listrep(y)
+5. Remaining z list: listrep(z)
+
+Wait, but is this right? The segment x to t doesn't make sense because it includes all nodes up to t, but t has t->next that also needs to be covered. And in the actual RPs, we see that t's next is not set to u (in fact in RP_pre_loop, t = x so x->next = y_307 = u, and there's data_at(x->next, ..., y_307)).
+
+Let me think again. In RP_pre_loop:
+- x = x@pre, t = x@pre, so t = x
+- x->next = y_307, which is u
+
+So at pre_loop: t = x, t->next = u. So we can write: t == x, and data_at(field_addr(t, next), ..., u)
+
+At iter_2:
+- x = x@pre, t = y_307 (= original x->next)
+- x@pre->next = y@pre (set during loop body)
+- y@pre->next = z@pre
+- z@pre->next = y_307 (= t)
+- y_307->next = y_333 (= u... but wait, u = y_333, but is u = t->next? In iter_2, t = y_307 and u = y_333. So yes, u = t->next = y_307->next... but in the SEP, y_307->next = y_333 which is indeed the original x->next->next.)
+
+Wait wait wait. Let me re-check. In the loop body:
+```
+t -> next = y;     // Step 1: x->next = y
+t = y;             // Step 2: t = y
+y = y -> next;     // Step 3: y = y->next
+if (z) {
+    t -> next = z; // Step 4: y->next = z
+    t = z;         // Step 5: t = z
+    z = z -> next; // Step 6: z = z->next
+}
+t -> next = u;     // Step 7: z->next = u (= y_307)
+t = u;             // Step 8: t = u (= y_307)
+u = u -> next;     // Step 9: u = u->next (= y_333)
+```
+
+So the heap after iteration 1:
+- x->next = y@pre
+- y@pre->next = z@pre
+- z@pre->next = y_307 (original u)
+- t = y_307
+- u = y_333 (= y_307->next)
+
+So x->next is NOT pointing at t. x->next points at y@pre which is in the segment between x and t. The segment x to t is: x -> y@pre -> z@pre -> t.
+
+Wait, but that's not a simple lseg(x, t) where x!=t. lseg(x, y) where x != y has: data_at(field_addr(x, next), ..., n1) * ... * data_at(field_addr(nk, next), ..., y). The segment contains all nodes from x up to the one that has `next = y`.
+
+So lseg(x, t) would be: x -> y@pre -> z@pre, where z@pre->next = t (=y_307). So:
+lseg(x, t) = data_at(x->next, y@pre) * data_at(y@pre->next, z@pre) * data_at(z@pre->next, t)
+
+Then separately we have:
+- t's node: t->next = u (= y_333). But we also need to own t->next. So: data_at(t->next, u)
+- And listrep(u): the rest
+
+This matches! Let me verify: in RP_iter_2, SEP has:
+data_at(x@pre->next, y@pre)      ← first node of lseg(x, t)
+data_at(y@pre->next, z@pre)      ← second node of lseg(x, t)
+data_at(z@pre->next, y_307)      ← third node, where y_307 = t
+
+And data_at(y_307->next, y_333)  ← t->next = u, where y_333 = u
+
+So indeed, the segment from x to t is: x -> y@pre -> z@pre -> y_307 (= t), and t->next = y_333 (= u).
+
+Similarly, in RP_iter_3:
+- x@pre->next = y@pre
+- y@pre->next = z@pre
+- z@pre->next = y_307
+- y_307->next = y_315
+- y_315->next = y_324
+- y_324->next = y_333 (= t)
+- y_333->next = y_360 (= u)
+
+So lseg(x, t) = x@pre -> y@pre -> z@pre -> y_307 -> y_315 -> y_324 where y_324->next = y_333 (= t).
+
+And t->next = y_333->next = y_360 (= u).
+
+So the invariant is:
+
+```
+x != 0 && t != 0 && u != 0 
+&& lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) 
+* listrep(y) * listrep(z)
+```
+
+But wait, I'm confusing t and u values across iterations.
+
+In RP_pre_loop:
+- t = x (= x@pre)
+- u = x->next (= y_307)
+- x->next = y_307 (= u)
+
+So lseg(x, t) where x==t: the segment from x to x is empty (emp). But the data_at is: data_at(x->next, u) = data_at(t->next, u). So we have:
+data_at(t->next, u) * listrep(u) * listrep(y) * listrep(z)
+
+That works! When x != 0 and t == x, lseg(x, t) = emp and data_at(t->next, u) * listrep(u) covers the x list.
+
+In RP_iter_2:
+- t = y_307
+- u = y_333
+- x->next = y@pre != t
+- So lseg(x, t) = data_at(x->next, y@pre) * data_at(y@pre->next, z@pre) * data_at(z@pre->next, y_307 = t)
+
+And data_at(t->next, u) = data_at(y_307->next, y_333 = u)
+
+In RP_iter_3:
+- t = y_333
+- u = y_360
+- x->next = y@pre != t
+- So lseg(x, t) = ... z@pre->next = y_307, y_307->next = y_315, y_315->next = y_324, y_324->next = y_333 (= t)
+
+And data_at(t->next, u) = data_at(y_333->next, y_360 = u)
+
+So the invariant pattern is:
+```
+lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+```
+
+And we need PROP: x != 0 (from pre_loop), and we need to check what other PROP constraints are needed.
+
+In RP_pre_loop: x@pre != 0
+In RP_iter_2: x@pre != 0, y@pre != 0, z@pre != 0, y_307 != 0
+In RP_iter_3: x@pre != 0, y@pre != 0, z@pre != 0, y_307 != 0, y_315 != 0, y_324 != 0, y_333 != 0
+
+But these extra non-null constraints are for existential variables (intermediate nodes). For the program variables:
+- x@pre != 0 in all RPs → x != 0 in invariant
+- y@pre != 0 in iter_2 and iter_3 but not pre_loop → y may be 0
+- z@pre != 0 in iter_2 and iter_3 but not pre_loop → z may be 0
+
+So for PROP, the minimum intersection is: x != 0. (x@pre != 0 appears in all RPs.)
+
+But wait, let me think about what the loop body needs. The loop condition is `while (u)`.
+
+At pre_loop: u = y_307 = x->next, which may be 0 if x is a singleton list.
+
+At iter_2: u = y_333 which is y_307->next (non-null since y_307 != 0).
+
+At iter_3: u = y_360 which is y_333->next (non-null since y_333 != 0).
+
+The loop enters when u != 0. So u != 0 is the loop entry condition.
+
+For the invariant, we need:
+- x != 0 (from code path: else branch means x != 0)
+- u != 0 (loop entry condition, needed for the loop body to execute)
+- t != 0? In all RPs, t points to some node. In pre_loop, t = x != 0. In iter_2, t = y_307 != 0. In iter_3, t = y_333 != 0. So t != 0 is always true.
+
+What else does the loop body access?
+- t->next = y (deref t)
+- t->next = z (deref t)  
+- t->next = u (deref t)
+- t = y, t = z, t = u (all assignments, no deref)
+
+So t needs to be dereferenced. t is arg[1] of lseg(x, t), not arg[0]. Actually, lseg(x, t) where x != t: the nodes in the segment have their `next` fields exposed. But t itself: is t->next part of a SEP predicate?
+
+We have `data_at(field_addr(t, next), struct list*, u)` in the SEP. So t->next is owned. Good.
+
+But what about lseg(x, t)? The definition of lseg(x, t):
+- If x == t: lseg(x, x) = emp
+- If x != t: exists z, data_at(field_addr(x, next), struct list*, z) * lseg(z, t)
+
+So lseg(x, t) will own x->next, etc., but not t->next. And data_at(field_addr(t, next), ..., u) owns t->next.
+
+So the permutation strategy should be able to give us t->next from the SEP. Good.
+
+Now, let me also check: does the loop body access u->next? Yes, at the end: `u = u->next`. So we need to dereference u->next. u is the first arg of listrep(u). When strategies unfold listrep(u), they produce data_at(field_addr(u, next), ..., next_of_u). So the permission for u->next comes from listrep(u).
+
+And y = y->next (dereference y->next). y is the first arg of listrep(y). Same logic.
+
+And z = z->next (dereference z->next). z is the first arg of listrep(z). Same logic.
+
+So the SEP covers all necessary permissions!
+
+Now let me think about the invariant form. For the SLL nodata predicates:
+- `lseg(x, y)` — segment from x to y
+- `listrep(l)` — complete list from l to NULL
+
+The invariant should be:
+```
+/*@ Inv Assert x != 0 && u != 0 &&
+    lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+ */
+```
+
+Wait, but I need to think about whether PROP needs t != 0. Let me check:
+- In RP_pre_loop: t = x = x@pre, x@pre != 0, so t != 0 ✓
+- In RP_iter_2: t = y_307, y_307 != 0 (in PROP: y_307 != 0), so t != 0 ✓
+- In RP_iter_3: t = y_333, y_333 != 0 (in PROP: y_333 != 0), so t != 0 ✓
+
+So t != 0 is always true. But is it needed in PROP? The lseg(x, t) definition doesn't require t != 0 explicitly. But if x != t, then t could be 0 if the segment ends at NULL. Hmm, but in our case lseg(x, t) with t != 0 means the segment is well-defined.
+
+Actually, I'm not sure t != 0 is needed. The `data_at(field_addr(t, next), ..., u)` implies t != 0 (can't get field_addr of NULL). So t != 0 is implicit.
+
+But for strategies, they might need explicit non-null constraints. Let me just include it to be safe.
+
+Actually wait, let me reconsider. In SLL nodata:
+- `lseg(x, 0)` is the same as `listrep(x)` which is a complete list
+- `lseg(x, y)` where y != 0 is a segment that ends with a node whose next = y
+
+So the invariant: `lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)`
+
+This says: we have a segment from x to t (x is non-null if x != t), t->next = u, u is the start of the remaining original x list, and y, z are remaining lists.
+
+But wait, in sll_nodata, the field is just `next` (no `prev`). So field_addr is `field_addr(t, next)` which produces `&(t->next)`.
+
+Now, let me also think about whether I need `has_permission` for any variable. The pointers in play:
+- x: appears as arg[0] of lseg → covered ✓
+- t: appears as arg[1] of lseg, AND field_addr(t, next) → covered ✓
+- u: appears as arg[0] of listrep AND data_at(..., u) → covered ✓
+- y: appears as arg[0] of listrep → covered ✓
+- z: appears as arg[0] of listrep → covered ✓
+
+So no has_permission needed.
+
+Now, one thing I want to verify: is `u != 0` the right PROP? The loop condition checks `while (u)`, meaning the loop body executes when u != 0. But at RP_pre_loop, u = x->next which could be 0.
+
+Wait, RP_pre_loop captures the state BEFORE the condition check. The condition is `(u)` in RP_pre_loop. If u == 0, the loop wouldn't enter.
+
+But for the invariant to be valid as a loop invariant, it needs to hold at the loop entry (before first condition check). At loop entry, u may be 0 (if x is a singleton). If u == 0, the loop body doesn't execute. But the invariant must still hold.
+
+In fact, the RPs only show states where u != 0 (because the loop enters). But the invariant must also hold when u == 0. In that case:
+- lseg(x, t) = lseg(x, x) = emp (since t == x at loop entry)
+- data_at(field_addr(t, next), ..., u) = data_at(field_addr(x, next), ..., 0) (since u == 0 and t == x)
+- listrep(u) = listrep(0) = emp
+
+That would represent a singleton list [x] with t == x and u == NULL. That works!
+
+So `u != 0` should NOT be in the invariant, because the invariant must hold even when u == 0 (loop exits immediately).
+
+Similarly, x != 0 comes from code path: `else { t = x; u = t->next; }`. If x == 0, we'd take the if branch. So x != 0 is always true when we reach the loop.
+
+For PROP, let's think about what's essential:
+- x != 0: needed because lseg(x, t) with x == 0... well, lseg(0, t) where t != 0 would try to dereference 0->next. Actually, looking at the SLL nodata reference, lseg(x, y) = (x == y && emp) || exists z, data_at(field_addr(x, next), ..., z) * lseg(z, y). So if x == 0 and x != y (t != 0), it would try to access field_addr(0, next) which is invalid. So x != 0 might not be strictly needed if x == t == 0... but x == 0 can't happen (due to the if-else).
+
+Let me think about this more carefully. At loop entry:
+- x != 0 (from else branch)
+- t = x
+- u = t->next (may be 0)
+
+If u == 0: loop doesn't enter. Invariant: lseg(x, x) * data_at(x->next, 0) * listrep(0) * listrep(y) * listrep(z) = emp * data_at(x->next, 0) * emp * listrep(y) * listrep(z).
+
+But wait, the pre-loop state also has `listrep(y@pre)` and `listrep(z@pre)`. And y == y@pre, z == z@pre. So listrep(y@pre) = listrep(y) and listrep(z@pre) = listrep(z). This matches.
+
+And data_at(x->next, 0) * emp (= listrep(0)) = data_at(x->next, 0). What about the rest? When x has x->next = 0, listrep(x) = data_at(x->next, 0) * listrep(0) = data_at(x->next, 0) * emp = data_at(x->next, 0).
+
+In the pre-loop SEP, we have:
+data_at(x@pre->next, y_307)  ← but if u == 0, this would be data_at(x@pre->next, 0)
+listrep(y_307)               ← listrep(0) = emp
+
+So the invariant: data_at(x->next, 0) matches data_at(x@pre->next, 0) ✓
+
+But wait, there's also `data_at(t_297_addr, struct list*, x@pre)` and `data_at(x_289_addr, struct list*, x@pre)` in the pre-loop SEP. These are stack-variable bindings (LOCAL), not heap ownership. They map:
+- &t → x@pre (t = x)
+- &x → x@pre (x = x@pre)
+
+These would be in the LOCAL section but they appear in SEP. Wait, looking at the RP output again, the actual parsed format puts stack bindings in SEP too (they use data_at for stack variable bindings).
+
+Hmm, let me re-read the parse output:
+```
+RP_pre_loop SEP:
+data_at ( &(x@pre->next) , struct list* , y_307 )    # heap: x->next = y_307
+listrep (y_307)                                        # heap: rest of x list
+data_at ( u_300_addr , struct list* , y_307 )          # stack: u = y_307
+data_at ( t_297_addr , struct list* , x@pre )           # stack: t = x
+data_at ( z_283_addr , struct list* , z@pre )           # stack: z = z@pre
+data_at ( y_286_addr , struct list* , y@pre )           # stack: y = y@pre
+data_at ( x_289_addr , struct list* , x@pre )           # stack: x = x@pre
+listrep (y@pre)                                         # heap: y list
+listrep (z@pre)                                         # heap: z list
+```
+
+So in the SEP section, we have both heap predicates and stack bindings. The stack bindings are of the form `data_at(var_addr, struct list*, value)` which is how QCP represents stack variables.
+
+But in the invariant, we usually don't include these stack bindings. The invariant replaces the program state, and the loop head sets up variables from the NEW invariant state. The stack bindings are automatically managed.
+
+Hmm, but wait. When we write `/*@ Inv Assert ... */`, the invariant replaces the entire state. If x appears as arg[0] of lseg, QCP knows x's stack binding. Actually, I think the invariant uses QCP's internal representation, not raw data_at. The C expressions like `lseg(x, t)` automatically carry the stack bindings for x and t.
+
+OK, let me just write the invariant and test it.
+
+Let me also think about one more thing: after the loop, the code does:
+```c
+t->next = merge(y,z);
+return x;
+```
+
+This requires t->next to be accessible. In the invariant, t->next is covered by `data_at(field_addr(t, next), struct list*, u)`. But after the loop exits (u == 0), the invariant becomes:
+data_at(field_addr(t, next), struct list*, 0) * listrep(y) * listrep(z)
+
+And then t->next = merge(y, z) assigns to t->next. The merge consumes listrep(y) * listrep(z) and produces listrep(ret). So the post-loop state becomes:
+data_at(field_addr(t, next), struct list*, ret) * listrep(ret)
+
+Wait, but t->next originally is 0 (since u == 0). After the assignment, t->next = ret. The list from t->next through ret is now listrep(ret). So:
+data_at(field_addr(t, next), struct list*, ret) * listrep(ret)
+
+Hmm, I'm not sure about this. The Ensure of merge is `listrep(__return)`, so it returns a list. Let me not overthink this and just write the invariant.
+
+Invariant:
+```
+/*@ Inv Assert x != 0 &&
+    lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+ */
+```
+
+Wait, I need to verify this holds across all RPs. Actually, I need to check: for the SEP in RP_pre_loop, can this invariant be matched?
+
+RP_pre_loop SEP:
+```
+data_at(x@pre->next, y_307)     ← This is data_at(field_addr(t, next), ..., u) because t=x and u=y_307
+listrep(y_307)                  ← This is listrep(u)
+data_at(u_300_addr, ..., y_307) ← Stack bindings
+data_at(t_297_addr, ..., x@pre) ← Stack bindings
+data_at(z_283_addr, ..., z@pre) ← Stack bindings
+data_at(y_286_addr, ..., y@pre) ← Stack bindings
+data_at(x_289_addr, ..., x@pre) ← Stack bindings
+listrep(y@pre)                  ← This is listrep(y)
+listrep(z@pre)                  ← This is listrep(z)
+```
+
+And lseg(x, t) = lseg(x, x) = emp (since x == t).
+data_at(field_addr(t, next), ..., u) = data_at(x@pre->next, y_307) ✓
+listrep(u) = listrep(y_307) ✓
+listrep(y) = listrep(y@pre) ✓
+listrep(z) = listrep(z@pre) ✓
+
+The invariant holds for RP_pre_loop. ✓
+
+For RP_iter_2 SEP:
+```
+data_at(x@pre->next, y@pre)     ← This is the first node of lseg(x, t)
+data_at(y@pre->next, z@pre)     ← Second node of lseg(x, t)
+data_at(z@pre->next, y_307)     ← Third node of lseg(x, t), where y_307 = t
+data_at(y_307->next, y_333)     ← This is data_at(field_addr(t, next), ..., u)
+listrep(y_333)                  ← This is listrep(u)
+data_at(u_300_addr, ..., y_333) ← Stack bindings
+data_at(t_297_addr, ..., y_307) ← Stack bindings
+data_at(z_283_addr, ..., y_324) ← Stack bindings
+data_at(y_286_addr, ..., y_315) ← Stack bindings
+data_at(x_289_addr, ..., x@pre) ← Stack bindings
+listrep(y_315)                  ← This is listrep(y)?
+listrep(y_324)                  ← This is listrep(z)?
+```
+
+Wait, I need to check: y = y_315 and z = y_324. So listrep(y) = listrep(y_315) and listrep(z) = listrep(y_324). ✓
+
+And lseg(x, t) where x=x@pre and t=y_307:
+By definition: lseg(x@pre, y_307) = exists z1, data_at(x@pre->next, z1) * lseg(z1, y_307)
+= data_at(x@pre->next, y@pre) * lseg(y@pre, y_307)
+= data_at(x@pre->next, y@pre) * exists z2, data_at(y@pre->next, z2) * lseg(z2, y_307)
+= data_at(x@pre->next, y@pre) * data_at(y@pre->next, z@pre) * lseg(z@pre, y_307)
+= data_at(x@pre->next, y@pre) * data_at(y@pre->next, z@pre) * exists z3, data_at(z@pre->next, z3) * lseg(z3, y_307)
+= data_at(x@pre->next, y@pre) * data_at(y@pre->next, z@pre) * data_at(z@pre->next, y_307) * lseg(y_307, y_307)
+= data_at(x@pre->next, y@pre) * data_at(y@pre->next, z@pre) * data_at(z@pre->next, y_307) * emp
+
+Which matches the first three data_at items in RP_iter_2 SEP. ✓
+
+And data_at(field_addr(t, next), ..., u) = data_at(y_307->next, y_333) ✓
+listrep(u) = listrep(y_333) ✓
+listrep(y) = listrep(y_315) ✓
+listrep(z) = listrep(y_324) ✓
+
+The invariant holds for RP_iter_2. ✓
+
+For RP_iter_3 SEP:
+```
+data_at(x@pre->next, y@pre)     ← lseg(x, t)
+data_at(y@pre->next, z@pre)     ← lseg(x, t)
+data_at(z@pre->next, y_307)     ← lseg(x, t)
+data_at(y_307->next, y_315)     ← lseg(x, t)
+data_at(y_315->next, y_324)     ← lseg(x, t)
+data_at(y_324->next, y_333)     ← lseg(x, t), where y_333 = t
+data_at(y_333->next, y_360)     ← data_at(field_addr(t, next), ..., u)
+listrep(y_360)                  ← listrep(u)
+data_at(u_300_addr, ..., y_360) ← Stack
+data_at(t_297_addr, ..., y_333) ← Stack
+data_at(z_283_addr, ..., y_351) ← Stack
+data_at(y_286_addr, ..., y_342) ← Stack
+data_at(x_289_addr, ..., x@pre) ← Stack
+```
+
+lseg(x, t) = lseg(x@pre, y_333):
+= data_at(x@pre->next, y@pre) * data_at(y@pre->next, z@pre) * data_at(z@pre->next, y_307) * data_at(y_307->next, y_315) * data_at(y_315->next, y_324) * data_at(y_324->next, y_333)
+
+Which matches the first 6 data_at items. ✓
+
+data_at(field_addr(t, next), ..., u) = data_at(y_333->next, y_360) ✓
+listrep(u) = listrep(y_360) ✓
+listrep(y) = listrep(y_342) ✓ (y = y_342)
+listrep(z) = listrep(y_351) ✓ (z = y_351)
+
+The invariant holds for RP_iter_3. ✓
+
+Great, the invariant seems correct!
+
+Now, let me also double-check: does `x != 0` need to be in PROP? Looking at the RP PROP values:
+- RP_pre_loop: (x@pre != 0) ✓
+- RP_iter_2: (x@pre != 0) ✓
+- RP_iter_3: (x@pre != 0) ✓
+
+And `t != 0`: 
+- RP_pre_loop: t = x@pre, x@pre != 0, so t != 0 ✓
+- RP_iter_2: t = y_307, PROP has y_307 != 0 ✓
+- RP_iter_3: t = y_333, PROP has y_333 != 0 ✓
+
+Should I add t != 0? It's true in all RPs. But is it needed? The data_at(field_addr(t, next), ..., u) already implies t != 0. But strategies might need the explicit condition. Let me add it to be safe.
+
+Actually, I'm not sure. Let me try without it first and see if verification passes.
+
+Also, `u != 0`? At pre_loop, u = y_307 which may or may not be 0. The invariant must hold even when u == 0 (loop exits). So I should NOT include u != 0.
+
+So first invariant attempt:
+```c
+/*@ Inv Assert x != 0 &&
+    lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+ */
+```
+
+Let me write this and test.
+
+[TEXT]
+Now I have the full picture. Let me analyze the RPs and construct the invariant.
+
+**Diff Analysis:**
+
+RP_pre_loop: t=x, u=x->next. Chain: x@pre -> y_307 -> listrep(y_307). Separate y@pre, z@pre lists.
+
+RP_iter_2: t=y_307, u=y_333 (x->next->next). Chain: x@pre -> y@pre -> z@pre -> y_307 -> y_333 -> listrep(y_333). Remaining: listrep(y_315), listrep(y_324).
+
+RP_iter_3: t=y_333, u=y_360. Chain: x@pre -> y@pre -> z@pre -> y_307 -> y_315 -> y_324 -> y_333 -> y_360 -> listrep(y_360). Remaining: listrep(y_342), listrep(y_351).
+
+**Pattern**: At each loop head, we have `lseg(x, t)` (the built prefix ending at but not including t), then `data_at(field_addr(t, next), ..., u)` (t->next = u), then `listrep(u)` (rest of original x chain), plus `listrep(y)` and `listrep(z)` (remaining interleave source lists).
+
+The loop body interleaves one y node and one z node between t and u, then advances t to u.
+
+Now Step 2.7: Assemble the invariant and Step 3: Verify.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/llist/multi_merge/multi_merge.c
+
+============================================================
+[THINKING] (232 chars)
+============================================================
+I already have the file content. Let me write the invariant file and test it.
+
+The invariant:
+```
+/*@ Inv Assert x != 0 &&
+    lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+ */
+```
+
+[TEXT]
+Now let me create the invariant test file and run verification.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_inv.c
+
+============================================================
+[THINKING] (32 chars)
+============================================================
+Now let me run the verification.
+
+[TEXT]
+Now running verification (Step 3.2).
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.sll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_verify.log
+
+============================================================
+[THINKING] (44 chars)
+============================================================
+Let me check the tail and grep for Admitted.
+
+[TEXT]
+Let me check verification results.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_verify.log && echo "---" && grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v 2>/dev/null || echo "no manual proof file"
+
+============================================================
+[THINKING] (108 chars)
+============================================================
+Symexec passes but there are 4 Admitted goals in proof_manual. Let me check what kind of witnesses they are.
+
+[TEXT]
+Symexec passed, but 4 Admitted goals. Let me diagnose the failures.
+
+[TOOL: Bash]
+Bash: grep "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v
+
+[TOOL: Bash]
+Bash: grep "fatal error" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_verify.log 2>/dev/null | head -20
+
+============================================================
+[THINKING] (183 chars)
+============================================================
+No fatal errors in the verify log. Let me look at the manual proof file more carefully to understand which witnesses are admitted. I need to see the context around each admitted goal.
+
+[TEXT]
+No fatal errors. Let me identify the specific witness names.
+
+[TOOL: Bash]
+Bash: grep -B3 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v | grep -E "(Lemma|Admitted)"
+
+============================================================
+[THINKING] (24345 chars)
+============================================================
+So we have:
+1. ential_wit_2: Loop preservation failure (after one iteration)
+2. return_wit_1: Loop exit to postcondition failure
+3. return_wit_2: Loop exit to postcondition failure
+4. return_wit_3: Loop exit to postcondition failure
+
+Let me think about what could cause these:
+
+**entail_wit_2**: The loop preservation check fails. After one iteration, the invariant must be re-established. The issue may be in how the strategies fold/unfold the invariant after the loop body changes t, u, y, z.
+
+Let me think about what happens during loop preservation:
+- Before iteration: invariant holds (lseg(x, t) * data_at(t->next, u) * listrep(u) * listrep(y) * listrep(z))
+- Loop body executes (modifying t, u, y, z, and inserting nodes)
+- After iteration: need to re-establish the invariant
+
+The issue could be:
+1. The lseg(x, t) needs to be extended to include the newly inserted nodes
+2. Maybe the strategies can't fold the new segment properly
+
+**return_wit_1, 2, 3**: There seem to be multiple exit paths from the loop (return statements inside the loop body). The invariant + loop exit condition must imply the postcondition.
+
+Let me check the return statements. There are two return paths inside the loop:
+1. `u = merge(u, z); t->next = u; return x;` (when y == 0)
+2. `u = merge(u, y); t->next = u; return x;` (when z == 0)
+
+And the loop exit (when u == 0):
+`t->next = merge(y, z); return x;`
+
+So return_wit_1, 2, 3 probably correspond to these three exit paths.
+
+For the returns inside the loop, when we return x, the postcondition is `listrep(__return) = listrep(x)`. But the invariant says:
+- lseg(x, t) * data_at(t->next, u) * listrep(u) * listrep(y) * listrep(z)
+
+After `t->next = u` and `return x`, we need listrep(x). But the invariant has:
+- lseg(x, t): a segment from x to t
+- data_at(t->next, u): t->next = u
+- listrep(u): the rest of the original list
+
+So listrep(x) = lseg(x, t) * data_at(t->next, u) * listrep(u). But we also have listrep(y) and listrep(z) in the invariant! These are consumed by merge(u, z) or merge(u, y), but the merge result is stored in u. The postcondition needs just listrep(x), but the invariant has extra listrep(y) * listrep(z) (or whatever is left after the merge).
+
+Hmm, but for return_wit_1 (when y == 0):
+- u = merge(u, z): consumes listrep(u) * listrep(z) and produces listrep(u_new)
+- t->next = u_new
+- return x
+
+After merge: the invariant state should be: lseg(x, t) * data_at(t->next, u_new) * listrep(u_new) * listrep(y) * listrep(0). But wait, z was consumed by merge. And we set t->next = u_new.
+
+But the merge function is opaque (no body shown). symexec can't verify the merge call. The merge function's specification is `Require listrep(x) * listrep(y) Ensure listrep(__return)`. So when called with (u, z), it requires listrep(u) * listrep(z) and returns a new list.
+
+Actually, I think the issue might be that the strategies can't handle the merge calls. merge is a function call with pre/post conditions, and the symexec should be able to use those.
+
+Actually, let me reconsider. The return witnesses are about: given the invariant + loop exit condition, can we prove the postcondition? For the return inside the loop body:
+- When y == 0: u = merge(u, z); t->next = u; return x;
+- Postcondition: listrep(__return) = listrep(x)
+
+From the invariant: lseg(x, t) * data_at(t->next, u) * listrep(u) * listrep(y) * listrep(z)
+After merge(u, z): consumes listrep(u) * listrep(z), produces listrep(u')
+After t->next = u': data_at(t->next, u')
+Now state: lseg(x, t) * data_at(t->next, u') * listrep(u') * listrep(y) * listrep(0) (=listrep(0) = emp)
+And y == 0, so listrep(y) = listrep(0) = emp.
+So state: lseg(x, t) * data_at(t->next, u') * listrep(u')
+
+Can we prove listrep(x) from this? Yes, because lseg(x, t) * data_at(t->next, u') * listrep(u') can be folded into lseg(x, t) * data_at(t->next, u') * listrep(u') = lseg(x, t) * listrep(t) = listrep(x). Wait, is that right?
+
+Actually, lseg(x, t) with data_at(t->next, u') and listrep(u'):
+data_at(t->next, u') * listrep(u') can be folded into data_at(t->next, u') * listrep(u') which is one layer of listrep(t). So:
+lseg(x, t) * data_at(t->next, u') * listrep(u') = lseg(x, t) * (data_at(t->next, u') * listrep(u')) = lseg(x, t) * listrep(t) = ...
+
+Hmm, lseg(x, t) * listrep(t). lseg(x, t) is the segment from x to t. listrep(t) is the full list from t. If we append them, we get listrep(x) = lseg(x, t) * listrep(t). Wait, that's not quite right. lseg(x, t) ends at t (last node in segment has next = t), and listrep(t) = data_at(t->next, ...) * ... So lseg(x, t) * listrep(t) would have t->next owned twice (once from lseg's last node and once from listrep's first layer).
+
+Actually no. lseg(x, t) by definition: (x == t && emp) || exists z, data_at(field_addr(x, next), ..., z) * lseg(z, t). The segment contains nodes up to BUT NOT INCLUDING t. The last node nk has nk->next = t. So nk->next is NOT t's next field. It's a different field.
+
+listrep(t) = (t == 0 && emp) || exists z, data_at(field_addr(t, next), ..., z) * listrep(z).
+
+So lseg(x, t) owns the chain up to nk where nk->next = t, and listrep(t) owns t->next onwards. No overlap. Together they form the full list: x -> ... -> nk -> t -> ...
+
+Wait, but lseg(x, t) means "segment from x to t" and the last field is some node's next pointing to t. But the node t itself is not in the segment. So the segment contains all nodes before t.
+
+So lseg(x, t) + listrep(t) where lseg ends with ...-> t, would together form listrep(x). But is this actually a valid strategy rule?
+
+I think the issue might be different. Let me reconsider: maybe the strategies don't have a rule for combining lseg and listrep directly. The strategies for sll_nodata might not have a rule for `lseg(x, t) * listrep(t) |- listrep(x)` or something similar.
+
+Actually, for the return_wit cases, the invariant state needs to satisfy the postcondition. Let me think about what state we have for each return:
+
+**Return from loop exit (u == 0)**:
+After loop: t->next = merge(y, z); return x;
+We have from invariant: lseg(x, t) * data_at(t->next, 0) * listrep(0) * listrep(y) * listrep(z)
+listrep(0) = emp
+data_at(t->next, 0) 
+Then merge(y, z) consumes listrep(y) * listrep(z), produces listrep(ret)
+t->next = ret: data_at(t->next, ret)
+State: lseg(x, t) * data_at(t->next, ret) * listrep(ret)
+Can we prove listrep(x)? lseg(x, t) * data_at(t->next, ret) * listrep(ret) should equal lseg(x, t) * listrep(t) = listrep(x).
+
+Hmm, the issue might be that strategies need explicit unfold/fold rules. Or maybe the PROP is insufficient.
+
+Let me think about what additional PROP might help. The key insight from the SKILL.md fix strategies:
+
+1. Put the dereferenced variable at arg[0] - not applicable here
+2. Check for redundant data_at - the invariant seems clean
+3. Carry frame items with PROP equalities - might need this
+4. Widen the boundary with field expressions - not sure
+5. Add non-null PROP to trigger unfolds - worth trying
+
+Let me try adding t != 0 to the PROP. In the RPs, t is always non-null, but maybe strategies need this explicit constraint to unfold lseg or fold listrep.
+
+Actually, let me also think about whether the return_wit issues are about merge being an opaque function. merge is declared but not defined. symexec sees it as an external function with a spec. The return witnesses might need to reason about the merge call's post-state.
+
+For return_wit_1 (y == 0 case):
+```
+u = merge(u, z);  // consumes listrep(u) * listrep(z), produces listrep(u')
+t->next = u';     // t->next = u'
+return x;         // need listrep(x)
+```
+
+After merge: invariant becomes lseg(x, t) * data_at(t->next, u) * listrep(u) * listrep(0) * listrep(z_after_merge)... wait, merge consumes listrep(u) and listrep(z). After merge, we have listrep(u') where u' is the new u.
+
+Wait, I'm confused about how symexec handles merge. Let me look at the pre_auto or goal file.
+
+Actually, let me focus on what might be going wrong with the proof. 4 admitted goals means the invariant is close but not quite right. Let me try a few things:
+
+1. First, try adding `t != 0` to the PROP. This might help with unfolding lseg.
+
+Actually, wait. Let me check: does `lseg(x, t)` allow x == t? If x == 0 and t == 0, then x == t and lseg(0, 0) = emp. But we know x != 0 from the code path. So x != 0 and t could be 0 or non-null.
+
+Actually, t is always non-null in the RPs. At pre_loop, t = x (x != 0). At iter_2, t = y_307 where y_307 != 0. At iter_3, t = y_333 where y_333 != 0. So t != 0 is always true. But is it expressed as a PROP in all RPs?
+
+In RP_pre_loop: (x@pre != 0) AND t = x@pre → t != 0 but not explicit
+In RP_iter_2: (y_307 != 0) → t != 0 but not explicit (t is bound, not a program variable in PROP)
+In RP_iter_3: (y_333 != 0) → t != 0
+
+The PROP constraints in RPs are on existential variables, not program variables. So t != 0 is not in the PROP intersection. But it IS true in all RPs.
+
+Let me try adding t != 0 to see if it helps the strategies unfold lseg.
+
+Other ideas:
+- Maybe I need an `exists` variable? Looking at the SKILL example:
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(l, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+The example uses `exists p_prev` for the linking node. But in our case, t is a program variable, not an exists variable.
+
+Actually, let me reconsider the structure. For the SLL nodata, the predicates are `lseg(x, y)` and `listrep(l)`. There's no "reverse" segment. So the lseg(x, t) should work.
+
+Hmm, but actually, looking more carefully at the RPs, the lseg strategy might not handle the case where the segment has been modified by inserting y/z nodes. The strategies might need to "fold" the individual data_at nodes into a lseg.
+
+Let me think about what strategies exist for sll_nodata. I know the rules are parsed from sll_nodata.strategies. Let me look at the reference.
+
+Actually, let me try another approach. Maybe the issue is that the invariant should NOT include x != 0 in PROP, or should include additional constraints.
+
+Actually, let me re-examine the exact invariant more carefully.
+
+The invariant is:
+```
+x != 0 && lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+```
+
+Wait, can I just use `data_at(field_addr(t, next), struct list*, u)` directly? In the RP, it's written as `data_at(&(x@pre->next), struct list*, y_307)` which corresponds to `data_at(field_addr(x, next), ...)`. But in the invariant, I used `field_addr(t, next)` which should be fine.
+
+But actually, looking at the invariant form, maybe the issue is that `lseg(x, t)` needs t to be a valid address. When t is a computed value but not a heap node, maybe the strategies can't handle it?
+
+Actually, let me think more carefully about what lseg(x, t) means in the context of SLL. The definition is:
+lseg(x, y) = (x == y && emp) || exists z, data_at(field_addr(x, next), ..., z) * lseg(z, y)
+
+So lseg(x, t) where x != t gives: data_at(field_addr(x, next), ..., z1) * data_at(field_addr(z1, next), ..., z2) * ... * data_at(field_addr(zk, next), ..., t) * lseg(t, t) where lseg(t, t) = emp.
+
+But wait, t is a pointer. To get field_addr(t, next), we need t to be a valid heap address. And in lseg(x, t), the last data_at is field_addr(zk, next) which has value t. The node t itself is NOT owned by lseg(x, t).
+
+Then data_at(field_addr(t, next), ..., u) owns t->next. So t is a node whose next field is owned, but the node t itself might not be in the SEP. Is that a problem?
+
+In QCP's separation logic, to access t->next, you need to own field_addr(t, next). The data_at(field_addr(t, next), ..., u) provides that ownership. So there shouldn't be a problem.
+
+But for strategies: to fold lseg(x, t) * data_at(field_addr(t, next), ..., u) * listrep(u) into listrep(x), we might need a strategy rule that says:
+lseg(x, t) * data_at(field_addr(t, next), ..., u) * listrep(u) |- listrep(x)
+
+This would be: the segment from x to t, plus t->next = u, plus listrep(u), gives listrep(x). Is there such a rule?
+
+Hmm, from the lseg definition:
+listrep(l) = (l == 0 && emp) || exists z, data_at(field_addr(l, next), ..., z) * listrep(z)
+
+And lseg(l, t) * data_at(field_addr(t, next), ..., u) * listrep(u):
+If l == t: emp * data_at(field_addr(t, next), ..., u) * listrep(u) = data_at(field_addr(l, next), ..., u) * listrep(u) = listrep(l) via the listrep definition.
+
+If l != t: lseg(l, t) = exists z, data_at(field_addr(l, next), ..., z) * lseg(z, t). Then data_at(field_addr(t, next), ..., u) * listrep(u) = (one layer of) listrep(t) via definition. So:
+data_at(field_addr(l, next), ..., z) * lseg(z, t) * listrep(t)
+
+But lseg(z, t) * listrep(t)... hmm, this doesn't directly fold. lseg(z, t) has zk->next = t, and listrep(t) has t->next = .... These don't overlap, so together they form listrep(z). 
+
+So the fold would be:
+data_at(field_addr(l, next), ..., z) * lseg(z, t) * data_at(field_addr(t, next), ..., u) * listrep(u)
+= data_at(field_addr(l, next), ..., z) * lseg(z, t) * listrep(t)
+= data_at(field_addr(l, next), ..., z) * listrep(z)
+= listrep(l)
+
+So the fold should work conceptually. The question is whether the strategies have this rule.
+
+Let me try a different approach: maybe the issue is that I need to add PROP equalities. Or maybe I need to express the invariant differently.
+
+Actually, let me try adding `u == t->next` in PROP. Wait, but the SKILL.md warns about dup_data_at from field expressions in PROP. Let me instead try a completely different invariant structure.
+
+What if the invariant is:
+```
+lseg(x, 0) * listrep(y) * listrep(z)
+```
+No, that's too simple and doesn't capture the loop state.
+
+What about:
+```
+lseg(x, t) * listrep(t) * listrep(y) * listrep(z)
+```
+
+Wait, but lseg(x, t) * listrep(t) would try to own certain fields:
+- lseg(x, t) ends with some node nk where nk->next = t
+- listrep(t) starts with data_at(field_addr(t, next), ..., z1)
+
+These don't overlap (nk->next is a different field than t->next). So together they form listrep(x). But does lseg(x, t) * listrep(t) represent the right state?
+
+Actually, let me reconsider. In lseg(x, t):
+- If x != t: the segment has all nodes from x forward until a node points to t. The last node's next = t.
+- If x == t: lseg(x, x) = emp
+
+In listrep(t):
+- If t != 0: data_at(field_addr(t, next), ..., z1) * listrep(z1)
+
+So lseg(x, t) * listrep(t):
+- If x == t == 0: emp * emp = emp. This is wrong because we expect x != 0.
+- If x == t != 0: emp * data_at(field_addr(t, next), ..., z1) * listrep(z1). With t = x, this is data_at(x->next, ...) * listrep(...). In RP_pre_loop, we have x->next = y_307 = u, and listrep(u). So this matches!
+  But wait, we also need the stack bindings for u. Hmm, u is in listrep(u) as arg[0] but in the RP, u's value is given by a separate data_at(u_300_addr, ..., y_307). This is an internal stack binding though.
+
+Hmm wait, let me check: when the invariant replaces the state, does QCP automatically infer stack bindings for program variables mentioned in predicates? Yes, I think so. The LOCAL bindings are auto-managed.
+
+But we also need u to be t->next. In the invariant, we don't say u == t->next. We just have listrep(t) * listrep(y) * listrep(z). Is that enough?
+
+No, because after the loop body, we need to re-establish the invariant for different values of t, u, y, z. The loop body changes t and u. After `t = u; u = u->next`, we need:
+- Old invariant: lseg(x, t_old) * listrep(t_old) * listrep(y) * listrep(z)
+- New invariant: lseg(x, t_new) * listrep(t_new) * listrep(y') * listrep(z')
+
+But t_new = u_old and u_new = u_old->next. And u_old = t_old->next (from the old listrep(t_old) unfold). So after unfolding listrep(t_old):
+data_at(field_addr(t_old, next), ..., u_old) * listrep(u_old)
+
+And we set t_new = u_old. So we need:
+lseg(x, t_old) * data_at(field_addr(t_old, next), ..., t_new) * listrep(t_new)
+
+Can we fold lseg(x, t_old) * data_at(t_old->next, t_new) into lseg(x, t_new)?
+By definition of lseg: lseg(x, t_new) = ... exists zk, data_at(zk->next, t_new).
+If t_old == zk (i.e., t_old is the last node in lseg before t_new = u_old = t_old->next), then lseg(x, t_old) * data_at(t_old->next, t_new) can be folded into lseg(x, t_new)? 
+
+Hmm, by definition:
+lseg(x, t_new) = (x == t_new && emp) || exists z, data_at(x->next, z) * lseg(z, t_new)
+
+If x != t_new:
+= data_at(x->next, z1) * ... * data_at(zk->next, t_new)
+
+So lseg(x, t_old) * data_at(t_old->next, t_new) where t_new = t_old->next:
+lseg(x, t_old) = data_at(x->next, z1) * ... * data_at(z_l->next, t_old)
+Adding data_at(t_old->next, t_new) gives:
+data_at(x->next, z1) * ... * data_at(z_l->next, t_old) * data_at(t_old->next, t_new)
+
+But this is NOT the same as lseg(x, t_new) because lseg(x, t_new) would have ... * data_at(zk->next, t_new) where zk is the LAST node before t_new. In our case, t_old is that last node.
+
+Wait, lseg(x, t_new) where the segment contains all nodes from x up to (but not including) t_new. If t_old is the last node in that segment, then t_old->next = t_new. So: lseg(x, t_new) = lseg(x, t_old) * data_at(t_old->next, t_new).
+
+Yes! That means lseg(x, t_old) * data_at(t_old->next, t_new) can be folded into lseg(x, t_new).
+
+So the preservation proof should work as:
+Old: lseg(x, t) * data_at(t->next, u) * listrep(u) * listrep(y) * listrep(z)
+After loop: t' = u, u' = u->next
+New: lseg(x, u) * listrep(u) * listrep(y') * listrep(z') = lseg(x, t) * data_at(t->next, u) * data_at(u->next, u') * listrep(u') * listrep(y') * listrep(z')
+
+And lseg(x, u) * data_at(u->next, u') = lseg(x, t) * data_at(t->next, u) * data_at(u->next, u')
+
+Hmm wait, that's only true if t is the node right before u in the chain. But in the loop, we also insert y and z nodes between t and u. So the chain from t to u goes through y and z nodes.
+
+Let me re-think. The invariant is:
+lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+
+where t->next = u (captured by the data_at).
+
+But after inserting y and z nodes, t->next is no longer u! In the first substep:
+- t->next = y  (t->next now points to y, not u)
+- t = y
+- y->next becomes z (in z step)
+- ...
+- At the end: something->next = u, t = u, u = u->next
+
+So the invariant at the beginning says t->next == u. But during the loop body, t->next is reassigned to y, then t changes, etc. The final state has a new t and a new u.
+
+For preservation, we need to show:
+Starting from: lseg(x, t_old) * data_at(t_old->next, u_old) * listrep(u_old) * listrep(y_old) * listrep(z_old)
+After the loop body (assuming both y and z are non-null):
+We get: lseg(x, t_new) * data_at(t_new->next, u_new) * listrep(u_new) * listrep(y_new) * listrep(z_new)
+where t_new = u_old, u_new = u_old->next, and y_new = y_old->next, z_new = z_old->next.
+
+To prove this, we need to track the heap transformations:
+1. y_old != 0: unfold listrep(y_old) to get data_at(y_old->next, y_next) * listrep(y_next)
+   - t_old->next = y_old (but t_old->next was u_old. This overwrites.)
+   - t becomes y_old
+   - y becomes y_next (= y_old->next)
+   
+2. z_old != 0: unfold listrep(z_old) to get data_at(z_old->next, z_next) * listrep(z_next)
+   - (now t = y_old)->next = z_old
+   - t becomes z_old
+   - z becomes z_next (= z_old->next)
+
+3. (now t = z_old)->next = u_old
+   t = u_old
+   u = u_old->next (= u_new)
+
+After step 3:
+- t is now u_old
+- u is now u_old->next
+- The chain is: ... -> t_old -> y_old -> z_old -> u_old (= t_new)
+- u_new = u_old->next
+
+The new SEP:
+- lseg(x, t_old) * data_at(t_old->next, y_old) * data_at(y_old->next, z_old) * data_at(z_old->next, u_old) * data_at(u_old->next, u_new) * listrep(u_new) * listrep(y_new) * listrep(z_new)
+
+But the invariant says:
+lseg(x, t_new) * data_at(t_new->next, u_new) * listrep(u_new) * listrep(y_new) * listrep(z_new)
+
+where t_new = u_old.
+
+We need to show:
+lseg(x, t_old) * data_at(t_old->next, y_old) * data_at(y_old->next, z_old) * data_at(z_old->next, t_new) == lseg(x, t_new)
+
+This is exactly what lseg folds to: lseg(x, t_new) where x != t_new includes data_at(x->next, ...) ... data_at(last->next, t_new). And t_old is part of this segment. So if t_old's next was y_old, and we follow through to t_new:
+
+Wait, but originally, lseg(x, t_old) ends with some node nk where nk->next = t_old. So:
+lseg(x, t_old) = data_at(x->next, n1) * ... * data_at(nk->next, t_old)
+
+Extending:
+data_at(nk->next, t_old) * data_at(t_old->next, y_old) * data_at(y_old->next, z_old) * data_at(z_old->next, t_new)
+
+These are all distinct data_at on different fields, so they can be combined into:
+lseg(x, t_old) * data_at(t_old->next, y_old) * ... * data_at(last->next, t_new)
+
+Hmm, but the definition of lseg uses direct data_at nodes. Can we fold a chain of individual data_at nodes into a lseg?
+
+I think there should be a strategy rule for this. The strategies for sll_nodata probably have rules for extending lseg by one node.
+
+OK, I think the invariant might be correct, but the strategies might need additional help. Let me try a different approach.
+
+Actually, maybe the issue is simpler than I think. Let me look at what specific strategies exist. Let me check the strategies file.
+
+Actually, I shouldn't read the strategies file because it's not whitelisted. Let me just try adding t != 0 to the PROP and see if it helps.
+
+Also, I notice that the RPs don't show the PROP `u != 0` explicitly. The loop condition is `(u)`. In RP_pre_loop, the condition is `cond=(u)` but we don't see u != 0 in PROP. In RP_iter_2 and RP_iter_3, u is not explicitly mentioned in PROP either.
+
+But wait, the loop condition is tested AFTER the RP snapshot. The RP captures the state BEFORE the condition check. So the condition itself is not in the PROP.
+
+Hmm, but the invariant must be strong enough to prove post-conditions. Let me try adding `t != 0` to the invariant and see if that helps.
+
+Also, maybe I need `lseg(x, t)` to include a data_at that uses t->next in some way. Wait, lseg(x, t) owns data_at(last_node->next, t). That's different from data_at(t->next, u). The field owned is last_node->next, not t->next. So there's no conflict.
+
+Actually, I just realized something. Let me re-read the RP SEP more carefully.
+
+In RP_pre_loop:
+```
+data_at ( &(x@pre->next) , struct list* , y_307 )    # heap: x->next = y_307 = u
+listrep (y_307)                                        # heap: rest (starting from u)
+```
+
+And stack:
+```
+data_at ( u_300_addr , struct list* , y_307 )          # u = y_307
+data_at ( t_297_addr , struct list* , x@pre )           # t = x
+```
+
+In the invariant, `lseg(x, t) = lseg(x, x) = emp`, `data_at(field_addr(t, next), ..., u) = data_at(x->next, y_307)`, `listrep(u) = listrep(y_307)`. ✓
+
+But wait: the invariant says `data_at(field_addr(t, next), struct list*, u)`. When t == x, this is `data_at(field_addr(x, next), struct list*, u)`. But the original state has `data_at(field_addr(x, next), struct list*, y_307)` where y_307 is an existential variable. And u is a program variable bound to y_307. So the invariant would be `data_at(field_addr(x, next), struct list*, u)` and this needs to match `data_at(field_addr(x, next), struct list*, y_307)` where u == y_307.
+
+In QCP, program variables in invariants are resolved to their current values. So writing `u` in the invariant refers to the value of u at loop entry. But u's value at loop entry is y_307 (from the stack binding). So `data_at(field_addr(x, next), struct list*, u)` should match `data_at(field_addr(x, next), struct list*, y_307)`.
+
+Actually, I think in QCP's invariant, when you write `u` in a data_at value position, it refers to the value of the program variable `u`. But QCP might not automatically resolve this to y_307. It might treat it as a symbol `u` that needs to be equal to y_307.
+
+Hmm, actually in the SKILL.md example:
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(l, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+Here, `p` is a program variable. The invariant uses `p` directly as a predicate argument. So QCP does support program variables in invariant expressions.
+
+OK let me just try adding `t != 0` and re-run. That's the simplest fix to try first.
+
+Actually wait, let me reconsider. Maybe the issue is that for return_wit, the merge function is called and QCP can't verify the merge call returns a proper list. But that should be handled by merge's spec.
+
+Let me try a simple fix: add `t != 0` to PROP. That's a non-null constraint that might unlock unfold rules.
+
+[TEXT]
+Let me try adding `t != 0` to the PROP to help trigger unfold strategies.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_inv.c', 'old_string': '      /*@ Inv Assert x != 0 &&\n          lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u)
+
+============================================================
+[THINKING] (31 chars)
+============================================================
+Now let me re-run verification.
+
+[TEXT]
+Now let me re-run verification (first retry).
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.sll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_verify.log
+
+============================================================
+[THINKING] (25 chars)
+============================================================
+Let me check the results.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_verify.log && echo "---" && grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_proof_manual.v 2>/dev/null
+
+============================================================
+[THINKING] (230 chars)
+============================================================
+0 Admitted goals! `QCP_VERIFIED: YES`!
+
+The fix was simply adding `t != 0` to the PROP constraint. This simple addition allowed the strategies to unfold lseg properly, resolving all 4 witness goals.
+
+Let me now produce the output.
+
+[TEXT]
+0 Admitted goals. `QCP_VERIFIED: YES` with the simple addition of `t != 0`.
+
+Now let me produce the final output.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/tmp/multi_merge_inv.c
+
+============================================================
+[THINKING] (76 chars)
+============================================================
+Now let me write the result.txt file as required by the user's instructions.
+
+[TEXT]
+Now let me write the result file.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/result.txt
+
+============================================================
+[THINKING] (46 chars)
+============================================================
+Task complete. Let me summarize what was done.
+
+[TEXT]
+## Summary
+
+**QCP_VERIFIED: YES** (1 attempt, 1 retry — 0 Admitted goals)
+
+### Invariant inferred
+
+```c
+/*@ Inv Assert x != 0 && t != 0 &&
+    lseg(x, t) * data_at(field_addr(t, next), struct list*, u) * listrep(u) * listrep(y) * listrep(z)
+ */
+```
+
+### Analysis
+
+The `multi_merge` function interleaves one node from `y` and one node from `z` between the current position `t` and the next node `u`, then advances `t` to `u` and `u` to `u->next`. The loop invariant captures:
+
+- **`lseg(x, t)`**: The built prefix of the result list from fixed head `x` up to (but not including) cursor `t`
+- **`data_at(field_addr(t, next), struct list*, u)`**: The `t->next = u` link, giving ownership of `t`'s next field
+- **`listrep(u)`**: The unconsumed portion of the original x list starting at `u`
+- **`listrep(y)` / `listrep(z)`**: The remaining source lists to interleave
+
+### First attempt fail (4 Admitted: entail_wit_2, return_wit_1/2/3)
+
+All four witnesses (loop preservation and three post-condition returns) admitted because strategies could not unfold `lseg(x, t)` without knowing `t` is non-null.
+
+### Retry fix: add `t != 0` to PROP
+
+Adding `t != 0` gave strategies the explicit non-null constraint needed to fire unfold rules for `lseg(x, t)`, allowing all fold/unfold chains to complete. Result: 0 Admitted.
+
+### Result file
+
+`/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/llist/multi_merge/result.txt`

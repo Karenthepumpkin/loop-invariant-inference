@@ -1,0 +1,43 @@
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list * append(struct list * x, struct list * y)
+/*@ With x_head
+	Require dlistrep_shape(x, x_head) * dlistrep_shape(y,0)
+  Ensure dlistrep_shape(__return,x_head)
+ */;
+
+struct list *multi_rev(struct list *p, struct list *q)
+/*@ Require dlistrep_shape(p,0) * dlistrep_shape(q,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+{
+    struct list *w, *t, *v, *x, *y;
+    w = 0;
+    x = 0;
+    v = p;
+    y = q;
+    /* INFILL */
+    while (1) {
+      if (v) {
+        t = v->next;
+        v->next = w;
+        v->prev = t;
+        w = v;
+        v = t;
+      }
+      else {
+        if (y) {
+          t = y->next;
+          y->next = x;
+          y->prev = t;
+          x = y;
+          y = t;
+        }
+        else { 
+          t = append(w , x);
+          return t;
+        }
+      }
+    }
+  // Deadcode : return 0;
+}

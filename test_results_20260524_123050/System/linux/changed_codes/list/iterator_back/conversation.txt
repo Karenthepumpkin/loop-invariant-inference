@@ -1,0 +1,3083 @@
+
+============================================================
+[THINKING] (295 chars)
+============================================================
+The user wants me to follow the SKILL.md file to process a specific C file and produce results. Let me start by reading the SKILL.md file and the target C file, and understanding the full workflow.
+
+Let me read the SKILL.md first, and the target C file, and check the result directory structure.
+
+[TEXT]
+I'll start by reading the SKILL.md and the target C file to understand the full workflow.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/SKILL.md
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c
+
+[TOOL: Bash]
+Bash: ls /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/ 2>/dev/null || echo "Result dir does not exist yet"
+
+============================================================
+[THINKING] (1253 chars)
+============================================================
+Let me analyze the task carefully following the SKILL.md workflow.
+
+**Input file**: `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c`
+
+**Result directory**: `/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back`
+
+**SKILL_DIR**: `/home/tzh66/loop-invariant-inference`
+
+**Key observations from the input file**:
+1. `#include` header: `dll_nodata_def.h` → Coq lib: `dll_nodata_shape_lib`
+2. Precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`
+3. Postcondition: `dlistrep_shape(__return, 0)`
+4. Loop: `while (p != head) { p = p->prev; }`
+5. This is a backward traversal of a DLL (doubly linked list). `p` starts at `l` and moves backwards (`p = p->prev`) until it reaches `head`.
+
+**Loop purpose**: Backward traversal of a DLL. `p` starts at `l` and keeps moving to `prev` until `p == head`.
+
+Let me now follow the workflow step by step.
+
+Step 1: Symbolic Execution & State Collection
+- 1.1 Unroll the loop
+- 1.2 Run symexec
+- 1.3 Parse the log
+
+Let me also read the DLL nodata reference first since I'll need predicates from there.
+
+Let me start by reading the predicate reference and running the unroller.
+
+[TEXT]
+I'll follow the SKILL.md workflow. Let me start by reading the predicate reference and running the unroller in parallel.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/references/dll_nodata.md
+
+[TOOL: Bash]
+Bash: ls /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/ /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/
+
+============================================================
+[THINKING] (4108 chars)
+============================================================
+Good. Now I have the predicate reference. Let me understand the loop:
+
+The loop is a backward traversal of a doubly-linked list:
+- `p = p->prev` — moving backward through the list
+- Loop ends when `p == head`
+- `p` starts at `l`
+
+Now I need to use `<RESULT_DIR>` instead of `<SKILL_DIR>` for output paths. Let me re-read SKILL.md to check... Wait, the SKILL says:
+- Working directory: `<SKILL_DIR>/workspace/`
+- Invariant test file: `<SKILL_DIR>/tmp/<name>_inv.c`
+
+But the user specified `RESULT: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back $RESULT/workspace/ $RESULT/tmp/`
+
+Hmm, wait. Let me re-read the user's message:
+"RESULT: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back $RESULT/workspace/ $RESULT/tmp/. Skip cleanup. $RESULT/result.txt."
+
+So the result directory is `/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back`, and workspace/tmp are under it.
+
+But SKILL.md uses `<SKILL_DIR>/workspace/` and `<SKILL_DIR>/tmp/`. I think the user wants me to use the RESULT directory as the SKILL_DIR-equivalent for workspace and tmp paths. Actually, let me re-read... 
+
+The user says "All steps. No ext. Whitelist." So I should follow SKILL.md exactly. But they also specify RESULT path. Maybe the SKILL_DIR paths should be replaced with RESULT paths for workspace and tmp?
+
+Looking more carefully at the SKILL.md whitelist:
+"You may ONLY Read files under these paths:
+- `<RESULT_DIR>/workspace/` and `<RESULT_DIR>/tmp/` (your own output)"
+
+So `<RESULT_DIR>` is the path from the user. That means workspace and tmp go under the RESULT directory, not under SKILL_DIR. But the SKILL.md says `<SKILL_DIR>/workspace/` for steps 1.1-1.3...
+
+Let me re-read the user's specification: "RESULT: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back $RESULT/workspace/ $RESULT/tmp/"
+
+I think this means RESULT_DIR = that path. And workspace and tmp are subdirectories of RESULT_DIR. Since the SKILL.md whitelist says `<RESULT_DIR>/workspace/` and `<RESULT_DIR>/tmp/`, I should use RESULT_DIR for those paths.
+
+But wait, SKILL.md's Key Paths table says:
+- Working directory: `<SKILL_DIR>/workspace/`
+- Invariant test file: `<SKILL_DIR>/tmp/<name>_inv.c`
+
+And the whitelist says:
+- `<RESULT_DIR>/workspace/` and `<RESULT_DIR>/tmp/` (your own output)
+
+The whitelist overrides the Key Paths table. So I should use RESULT_DIR for workspace and tmp.
+
+Now let me run the steps. `<name>` = `iter_back`.
+
+Step 1.1: Unroll
+```
+python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c --output /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_unrolled.c --ensure-emp
+```
+
+Step 1.2: Run symexec
+```
+/home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_unrolled.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_symexec.log
+```
+
+Let me proceed with all three steps.
+
+[TEXT]
+Good. The input file includes `dll_nodata_def.h`, so I'll use `dll_nodata_shape_lib`. Let me run the unroller, symexec, and parse the log.
+
+**Step 1.1: Unroll the loop.**
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c --output /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_unrolled.c --ensure-emp
+
+============================================================
+[THINKING] (38 chars)
+============================================================
+Unrolling successful. Now run symexec.
+
+[TEXT]
+**Step 1.2: Run symbolic execution.**
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_unrolled.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_symexec.log
+
+============================================================
+[THINKING] (72 chars)
+============================================================
+The output is large. Let me check the last 3 lines for the success gate.
+
+[TEXT]
+Let me check the gate (tail -3 of the log).
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_symexec.log
+
+============================================================
+[THINKING] (41 chars)
+============================================================
+Gate passed. Now Step 1.3: Parse the log.
+
+[TEXT]
+Gate passed. **Step 1.3: Parse the log.**
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py \
+  --file /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_symexec.log \
+  --out-states /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_states.txt \
+  --out-json /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_states.json
+
+============================================================
+[THINKING] (111 chars)
+============================================================
+Good, we have 3 RPs: RP_pre_loop, RP_iter_2, RP_iter_3. Let me read the full states.txt to analyze the details.
+
+[TEXT]
+3 recording points parsed. Now let me read the states file for detailed analysis.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_states.txt
+
+============================================================
+[THINKING] (34392 chars)
+============================================================
+Now let me analyze the RPs carefully.
+
+**Loop purpose**: Backward traversal of a doubly-linked list. `p = p->prev` until `p == head`.
+
+**RP_pre_loop** (before first iteration, `p != head`):
+- PROP: `l@pre != 0`
+- LOCAL: `&p == p_284_addr`, `&l == l_275_addr`, `&head == head_272_addr`
+- SEP:
+  - `data_at(p_284_addr, struct list*, l@pre)` — p points to l
+  - `data_at(head_272_addr, struct list*, head@pre)` — head binding
+  - `data_at(l_275_addr, struct list*, l@pre)` — l binding
+  - `dllseg_shape(head@pre, 0, l_prev, l@pre)` — segment from head to l (exclusive)
+  - `dlistrep_shape(l@pre, l_prev)` — list from l to end
+
+**RP_iter_2** (after first iteration, `p = p->prev`; p was l, now p points to l_prev):
+- PROP: `l@pre != head@pre`, `l@pre != 0`
+- SEP:
+  - `data_at(&(l@pre->prev), struct list*, l_prev)` — l->prev = l_prev
+  - `dlistrep_shape(y_290, l@pre)` — list from y_290 (l->next) to end
+  - `data_at(&(l@pre->next), struct list*, y_290)` — l->next = y_290
+  - `data_at(p_284_addr, struct list*, l_prev)` — p now = l_prev
+  - `data_at(head_272_addr, struct list*, head@pre)`
+  - `data_at(l_275_addr, struct list*, l@pre)`
+  - `dllseg_shape(head@pre, 0, l_prev, l@pre)` 
+
+Wait, let me think about this more carefully. In RP_pre_loop:
+- The original `dlistrep_shape(l@pre, l_prev)` has been unfolded at the l@pre node
+- `l@pre->next` = y_290 (the rest of the list)
+- `l@pre->prev` = l_prev
+
+And `p` has been updated to `l_prev` (which was `l@pre->prev`).
+
+In RP_iter_2, the SEP shows:
+- `dllseg_shape(head@pre, 0, l_prev, l@pre)` — unchanged from pre_loop
+- `dlistrep_shape(y_290, l@pre)` — the rest of the list starting at l->next
+
+So after one iteration, the dllseg is still `(head, 0, l_prev, l@pre)` and dlistrep is `(y_290, l@pre)`. And p = l_prev.
+
+**RP_iter_3** (after second iteration):
+- PROP: `l_prev != 0`, `l_prev != head@pre`, `l@pre != head@pre`, `l@pre != 0`
+- SEP:
+  - `data_at(&(l_prev->prev), struct list*, y_295)` — l_prev->prev = y_295
+  - `dllseg_shape(head@pre, 0, y_295, l_prev)` — segment from head to l_prev
+  - `data_at(&(l_prev->next), struct list*, l@pre)` — l_prev->next = l@pre
+  - `data_at(&(l@pre->prev), struct list*, l_prev)` — l@pre->prev = l_prev
+  - `dlistrep_shape(y_290, l@pre)` — list from y_290
+  - `data_at(&(l@pre->next), struct list*, y_290)` — l@pre->next = y_290
+  - `data_at(p_284_addr, struct list*, y_295)` — p = y_295 (which is l_prev->prev)
+  - `data_at(head_272_addr, struct list*, head@pre)`
+  - `data_at(l_275_addr, struct list*, l@pre)`
+
+Now let me analyze what's happening:
+
+**Frame items** (present in ALL RPs):
+- `data_at(head_272_addr, struct list*, head@pre)` — the head variable binding
+- `data_at(l_275_addr, struct list*, l@pre)` — the l variable binding
+
+**Sliding items**:
+- Pre_loop: `data_at(p_284_addr, struct list*, l@pre)` — p = l
+- Iter_2: `data_at(p_284_addr, struct list*, l_prev)` — p = l_prev
+- Iter_3: `data_at(p_284_addr, struct list*, y_295)` — p = y_295 (which is l_prev->prev)
+
+So p slides backward through the list.
+
+- Pre_loop: `dllseg_shape(head@pre, 0, l_prev, l@pre)` — segment from head to l
+- Iter_2: `dllseg_shape(head@pre, 0, l_prev, l@pre)` — same
+- Iter_3: `dllseg_shape(head@pre, 0, y_295, l_prev)` — segment from head to l_prev
+
+The dllseg also shifts! In iter_3, the last node inside the segment changed from l_prev to y_295 (l_prev->prev), and the endpoint changed from l@pre to l_prev.
+
+Wait, this is the key pattern. In iter_2, the dllseg is `(head@pre, 0, l_prev, l@pre)` — this means the dllseg has been unfolded too. Actually no, let me re-read more carefully.
+
+In RP_iter_2:
+- `dllseg_shape(head@pre, 0, l_prev, l@pre)` — this is the same as RP_pre_loop. This is the segment from head to l@pre (not including l@pre), with l_prev being the last node in the segment.
+
+In RP_iter_3:
+- `dllseg_shape(head@pre, 0, y_295, l_prev)` — the segment from head to l_prev (not including l_prev), with y_295 being the last node in the segment.
+
+So the dllseg is shrinking from the right! The pattern is:
+- Pre_loop: dllseg covers head → l_prev → l@pre (exclusive)
+- Initially: dlistrep from l@pre covers the rest
+- After p = p->prev (p becomes l_prev): the node at l_prev is now unfolded, and the dlistrep still starts from the original l@pre->next
+
+Wait, let me trace through the first iteration more carefully:
+
+Before iteration 1 (RP_pre_loop):
+- p = l@pre
+- dllseg(head@pre, 0, l_prev, l@pre) — segment from head to l@pre
+- dlistrep(l@pre, l_prev) — full list from l@pre
+
+In the loop body: p = p->prev = l_prev
+
+After iteration 1 (RP_iter_2):
+- p = l_prev
+- The dlistrep(l@pre, l_prev) was unfolded at l@pre:
+  - l@pre->next = y_290
+  - l@pre->prev = l_prev
+  - dlistrep(y_290, l@pre) — the remaining list from l@pre->next
+- The dllseg is still `dllseg_shape(head@pre, 0, l_prev, l@pre)` — unchanged!
+
+So RP_iter_2, the dllseg hasn't changed. But wait, the dllseg includes node l_prev. After unfolding, we have `data_at(&(l_prev->next), ...)` ... actually no, in RP_iter_2, we don't see l_prev's data_at fields being exposed. Let me check again.
+
+In RP_iter_2's SEP:
+- `dllseg_shape(head@pre, 0, l_prev, l@pre)` — folded segment
+- `dlistrep_shape(y_290, l@pre)` — list from y_290
+- `data_at(&(l@pre->prev), struct list*, l_prev)` — l@pre->prev
+- `data_at(&(l@pre->next), struct list*, y_290)` — l@pre->next
+
+So in iter_2, only l@pre was unfolded (the node p was at before the iteration). The dllseg is still folded. The l_prev node is still inside the folded dllseg.
+
+Then in the second iteration, p = l_prev, so p->prev. But p is inside the dllseg! So the dllseg needs to be unfolded at l_prev.
+
+After iteration 2 (RP_iter_3):
+- `dllseg_shape(head@pre, 0, y_295, l_prev)` — segment from head to l_prev (not including l_prev), with y_295 being the last node
+- `dlistrep_shape(y_290, l@pre)` — still the rest of list from l@pre->next
+- `data_at(&(l_prev->prev), struct list*, y_295)` — l_prev->prev exposed
+- `data_at(&(l_prev->next), struct list*, l@pre)` — l_prev->next exposed
+- `data_at(&(l@pre->prev), struct list*, l_prev)` — still present
+- `data_at(&(l@pre->next), struct list*, y_290)` — still present
+- p = y_295 (l_prev->prev)
+
+So now both l@pre and l_prev have been unfolded. The dllseg has shrunk.
+
+The pattern is: as p moves backward, the dllseg shrinks from the right (the rightmost node gets unfolded). The dlistrep covers nodes "ahead" of the original cursor.
+
+Now for the invariant:
+
+Looking at the loop body: `p = p->prev`
+- p traverses backward through the DLL
+- The loop ends when `p == head`
+
+Post-loop: `return p` — so p = head after the loop.
+
+The precondition gives us:
+- `dllseg_shape(head, 0, l_prev, l)` * `dlistrep_shape(l, l_prev)`
+- This says: head→...→l_prev→l is a DLL segment, and l→... is a full DLL
+
+After loop: p == head. We need `dlistrep_shape(__return, 0)` where `__return = p = head`.
+
+So the loop invariant needs to describe:
+1. A dllseg from head to some point (the traversed nodes)
+2. A dlistrep from p to... Actually, we need both the already-traversed nodes AND the remaining nodes.
+
+Wait, let me think about the traversal direction. p starts at l and moves backward to head. So:
+- head → ... → l_prev → l is the direction from head to l
+- p moves from l towards head (backward)
+
+At any point during traversal:
+- The nodes from head up to (but not including) p have been fully traversed (we passed through them going backward)
+- Wait, no. p moves backward from l to head. So:
+  - Initially: p = l (the rightmost node of the dllseg)
+  - p = p->prev makes p move leftward through the segment
+  
+So at any iteration:
+- Nodes from p (inclusive) to the end of the original list: still covered by dlistrep
+- Nodes from head to some point: covered by dllseg
+- Wait, this is getting confusing.
+
+Let me think again. The original precondition decomposes the full list:
+- `dllseg_shape(head, 0, l_prev, l)` — from head (inclusive) to l (exclusive). l_prev is the last node in this segment (l_prev->next = l).
+- `dlistrep_shape(l, l_prev)` — from l to the end, with prev pointer l_prev.
+
+So the full list is: head ↔ ... ↔ l_prev ↔ l ↔ ... ↔ 0
+
+Now p starts at l. The loop moves p backward:
+- p = l (first), then p = l_prev (second), then p = l_prev->prev (third), etc.
+- Loop ends when p == head.
+
+At any point during the loop, p points to some node in the DLL. The nodes before p (closer to head) could be in a dllseg, and the nodes from p onward could be in a dlistrep.
+
+But wait — the dlistrep is from l to the end of the list. During traversal, the dlistrep starting point doesn't change — it's still l. What changes is that nodes between head and p have been exposed via unfolds.
+
+Actually, looking at the RPs more carefully:
+
+RP_pre_loop:
+- `dllseg_shape(head@pre, 0, l_prev, l@pre)` — head→...→l_prev→l@pre (excl)
+- `dlistrep_shape(l@pre, l_prev)` — l@pre→...→end
+
+RP_iter_2 (p = l_prev):
+- `dllseg_shape(head@pre, 0, l_prev, l@pre)` — still the same!
+- `dlistrep_shape(y_290, l@pre)` — l@pre is now unfolded (l@pre->next = y_290), dlistrep covers y_290→...→end
+- `data_at(&(l@pre->prev), struct list*, l_prev)` — l@pre->prev = l_prev
+- p = l_prev
+
+RP_iter_3 (p = y_295):
+- `dllseg_shape(head@pre, 0, y_295, l_prev)` — now l_prev is also unfolded! dllseg covers head→...→y_295→l_prev (excl)
+- `dlistrep_shape(y_290, l@pre)` — still dlistrep from y_290
+- p = y_295
+
+So the pattern is:
+1. Initially: dllseg(head, 0, l_prev, l), dlistrep(l, l_prev), p = l
+2. After p = p->prev: p becomes l_prev. The node l (where p WAS) gets unfolded.
+3. After next p = p->prev: p becomes l_prev->prev (= y_295). The node l_prev (where p WAS) gets unfolded from the dllseg.
+
+So the invariant should describe:
+- A dllseg from head to p (where p is NOT included in the segment). p is the current node.
+- A dlistrep from the original l to the end.
+- p starts at l and moves to head.
+
+Wait, but the dlistrep in iter_2 is `dlistrep_shape(y_290, l@pre)`, not `dlistrep_shape(l@pre, l_prev)`. This is because l@pre is unfolded. The original full list was `dlistrep_shape(l@pre, l_prev)`, which unfolds to l@pre->next = y_290, l@pre->prev = l_prev, and dlistrep(y_290, l@pre).
+
+So during traversal, the part of the list "ahead" of the current position is covered by dlistrep (from original l->next onward), and the part "behind" (closer to head) is covered by dllseg.
+
+Now, the key insight for rewriting the invariant:
+
+At a generic point with cursor p:
+- dllseg(head, 0, p->prev, p) — segment from head up to p (exclusive). p is the current cursor.
+- dlistrep(l, l_prev) — but this needs to be rewritten...
+
+Hmm, actually let me think about this differently. The original precondition gives us the whole list decomposed as:
+`dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)`
+
+During the backward traversal from l to head, we're essentially consuming nodes from the right end of the dllseg.
+
+The pattern from the RPs:
+- Pre_loop: dllseg(head, 0, l_prev, l), dlistrep(l, l_prev) — this IS the original precondition
+- Iter_2: dllseg(head, 0, l_prev, l), dlistrep(y_290, l) — l is unfolded, dlistrep now starts at y_290 (l->next)
+  Wait, dlistrep_shape(y_290, l@pre) means the prev pointer is l@pre. So l@pre->next = y_290.
+  
+Hmm, the dlistrep slides. Initially it's dlistrep(l, l_prev), then dlistrep(y_290, l). But y_290 is l->next.
+
+Actually, I think the key invariant structure should be:
+
+`dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(l, p->next)`
+
+Wait, let me think more carefully. Let me re-read the example from SKILL.md:
+
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(l, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+This is for a forward traversal: `p = p->next`. The dllseg covers traversed nodes (from l to p), and dlistrep covers remaining nodes (from p onward).
+
+For backward traversal (`p = p->prev`):
+- dllseg(head, 0, ???, ???) — this covers nodes from head to some point
+- dlistrep(???, ???) — this covers remaining nodes
+
+But in our case, p moves from l backward to head. At any point:
+- p is the current cursor position
+- Nodes from p to the end of the list: the "un-traversed" part ahead
+- Nodes from head to p: the part behind
+
+Wait, that's the opposite. p is moving from the end of the dllseg towards the beginning. At any point:
+- The "ahead" part is what p hasn't reached yet (nodes between head and p, closer to head)
+- The "behind" part is what p has already passed through
+
+Actually, no. p starts at l, which is at the right end of the dllseg. So:
+- head → ... → l_prev → l → ... → end
+
+At the start:
+- dllseg covers head to l (exclusive)
+- dlistrep covers l to end
+
+p = l. Then p = l_prev. Then p = l_prev->prev. Eventually p = head.
+
+So p traverses the dllseg from right to left. At any point:
+- p is somewhere inside the original dllseg
+- The dllseg should cover head to p (exclusive): `dllseg_shape(head, 0, p_prev, p)`
+- The dlistrep should cover l to end: `dlistrep_shape(l, p->next)` ... no, l is the original starting point. l->next is y_290.
+
+Hmm, but look at the RPs again. In iter_2:
+- dllseg is still `(head, 0, l_prev, l)` — covering head to l
+- dlistrep is `(y_290, l)` — covering l->next to end
+- p = l_prev
+
+In iter_3:
+- dllseg is `(head, 0, y_295, l_prev)` — covering head to l_prev
+- dlistrep is `(y_290, l)` — covering l->next to end
+- p = y_295
+
+So the dllseg is shrinking from the right as p moves left. The dlistrep remains starting at l->next (y_290).
+
+The pattern: 
+- dllseg(head, 0, <p->prev? no...>, p) — segment from head up to p
+- dlistrep(l, p) — wait, that doesn't match... In iter_2, dlistrep is (y_290, l) where y_290 is l->next. In iter_3 it's (y_290, l) still.
+
+Actually, let me reconsider. The dllseg covers nodes from head to p (exclusive). When p = l (initial state), the dllseg is (head, 0, l_prev, l) which is head→...→l_prev→l (exclusive), i.e., head to l with l_prev as the last node. This matches p = l.
+
+When p = l_prev (iter_2), the dllseg should be head→...→l_prev (exclusive), with the last node being something like l_prev->prev. But in the RP, the dllseg is STILL (head, 0, l_prev, l). Why?
+
+Oh, I see! The dllseg hasn't been unfolded yet in iter_2 because p = l_prev, but l_prev is still INSIDE the folded dllseg. The traversal reads p->prev = l_prev->prev. To access l_prev->prev, the dllseg must be unfolded at l_prev, producing l_prev->prev = y_295 and a smaller dllseg (head, 0, y_295, l_prev).
+
+So iter_2 captures the state BEFORE unfolding the dllseg at l_prev. The p value has already been updated (p = l_prev), but the dllseg still contains l_prev folded.
+
+Wait, but then what exactly gets unfolded at each step?
+
+Let me re-read the SKILL.md definition: "Each RP captures the state before one unrolled iteration's condition check."
+
+RP_pre_loop: before first iteration. p = l. dllseg(head, 0, l_prev, l). dlistrep(l, l_prev). Check: p != head.
+
+After iter 1 (p = p->prev = l_prev):
+RP_iter_2: before second condition check. p = l_prev. dllseg(head, 0, l_prev, l). dlistrep(y_290, l). Check: p != head.
+
+So the loop body (p = p->prev) caused:
+1. p changed from l to l_prev
+2. dlistrep(l, l_prev) was unfolded at l, becoming dlistrep(y_290, l) + l->prev = l_prev + l->next = y_290
+
+The dllseg didn't change because the loop body only accesses p->prev, and p was l (not inside the dllseg). l is the first argument of dlistrep, so dlistrep is unfolded.
+
+After iter 2 (p = p->prev = l_prev->prev = y_295):
+RP_iter_3: before third condition check. p = y_295. dllseg(head, 0, y_295, l_prev). dlistrep(y_290, l). Check: p != head.
+
+This time, p was l_prev (inside the dllseg in iter_2). So the dllseg was unfolded at l_prev, producing:
+- l_prev->next = l (but we already have this from dlistrep unfolding! So this must be an overlap or it's consistent because l_prev->next = l, and l is already owned by dlistrep? Actually, data_at for l is the first argument, not l_prev->next... Hmm.)
+
+Wait, looking at iter_3 SEP more carefully:
+```
+data_at ( &(l_prev->prev) , struct list* , y_295 )   — l_prev->prev = y_295
+dllseg_shape (head@pre,  0 , y_295, l_prev)           — head→...→y_295→l_prev
+data_at ( &(l_prev->next) , struct list* , l@pre )     — l_prev->next = l
+data_at ( &(l@pre->prev) , struct list* , l_prev )     — l->prev = l_prev
+dlistrep_shape (y_290, l@pre)                          — l->next→...→end
+data_at ( &(l@pre->next) , struct list* , y_290 )      — l->next = y_290
+data_at ( p_284_addr , struct list* , y_295 )           — p = y_295
+data_at ( head_272_addr , struct list* , head@pre )
+data_at ( l_275_addr , struct list* , l@pre )
+```
+
+So the dllseg was unfolded at l_prev (which was its last node), producing:
+- l_prev->prev = y_295
+- l_prev->next = l
+- dllseg(head, 0, y_295, l_prev) — the remaining dllseg (shorter by one node)
+
+Now, the key pattern for the invariant:
+
+The dllseg contains the nodes from head up to but NOT including the current p. As p moves left, the dllseg shrinks from the right.
+
+The dlistrep contains what was originally past l: l->next = y_290, and the rest of the list.
+
+Now, for the invariant:
+- `dllseg_shape(head, 0, p->prev, p)` — the segment from head to p (exclusive)
+- `dlistrep_shape(l, p)` — hmm, that doesn't quite work...
+
+Let me think about what the invariant needs to capture.
+
+At any point during the loop:
+1. There is a dllseg from head to p (where p is the current cursor, not included in the segment): `dllseg_shape(head, 0, p_prev, p)` where p_prev is an exists variable representing p->prev.
+2. There is a dlistrep from some point to the end. Let me check the RPs:
+   - iter_2: dlistrep(y_290, l)
+   - iter_3: dlistrep(y_290, l)
+   
+   y_290 is l->next. So the dlistrep starts at l->next and its prev pointer is l. This is always `dlistrep(l->next, l)`.
+
+Wait, but in the original precondition, we have `dlistrep_shape(l, l_prev)`. This is l with prev = l_prev. In the unfolded form, l->next = y_290 and dlistrep(y_290, l). So `dlistrep_shape(l, l_prev)` ≈ `data_at(&(l->next), y_290) * data_at(&(l->prev), l_prev) * dlistrep(y_290, l)`.
+
+But for the invariant, we want folded forms. The dlistrep should be `dlistrep_shape(l, p)` ... wait, in iter_2 we have `dlistrep_shape(y_290, l)` and p = l_prev. The prev of the dlistrep is l, not p. But l is a program variable that doesn't change.
+
+Let me take the approach from SKILL.md section 4: "The invariant is a generalization of the RPs, not a subset."
+
+The loop invariant for backward traversal of a DLL should be:
+
+```
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(l, p)
+```
+
+Where p_prev is an exists variable.
+
+Let me verify against the RPs:
+
+At RP_pre_loop (p = l):
+```
+dllseg_shape(head, 0, p_prev, l) * dlistrep_shape(l, l)
+```
+But dlistrep_shape(l, l) = (l == 0 && emp) based on the definition... That's wrong. l != 0 (since l != 0 is in PROP). So dlistrep_shape(l, l) would be: exists t, data_at(field_addr(l, next), t) * data_at(field_addr(l, prev), l) * dlistrep_shape(t, l). But since t = l->next... this means dlistrep_shape(l, l) has the prev pointer as l, not l_prev.
+
+That doesn't match. The original dlistrep is `dlistrep_shape(l@pre, l_prev)`. And when unfolded, l->prev = l_prev.
+
+Hmm, I think the issue is more subtle. Let me try a different formulation.
+
+Looking at the SKILL.md fix strategies section, strategy 4 (field expressions on both sides):
+
+For a backward traversal DLL, the example invariant is:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+Let me check this against the RPs:
+
+At RP_pre_loop (p = l):
+- `dllseg_shape(head, 0, l->prev, l)` — head to l exclusive. The last node is l->prev which should equal l_prev. And from the original precondition, dllseg_shape(head, 0, l_prev, l) matches.
+- `dlistrep_shape(l->next, l)` — l->next to end, with prev = l. This should be equivalent to dlistrep_shape(l, l_prev) when unfolded. Let's see: dlistrep_shape(l, l_prev) unfolds to data_at(&(l->next), h, t) * data_at(&(l->prev), l_prev) * dlistrep(t, l). dlistrep(l->next, l) unfolds to data_at(&(l->next->next), ...) * data_at(&(l->next->prev), l) * ... — these are different! One starts at l, the other at l->next.
+
+This doesn't match directly. The dlistrep at l->next is equivalent to the "tail" of the dlistrep at l.
+
+OK, let me try yet another approach. Let me look at the RPs more holistically.
+
+The original state:
+- Segment: head → ... → l_prev → (l)
+- Full list: (l) → ... → end
+- Combined: head → ... → l_prev → l → ... → end
+
+After one iteration (p = l_prev):
+- p points to l_prev
+- The node l is now "behind" p (in the traversal direction)
+- The list ahead of p: l → ... → end (covered by dlistrep(y_290, l))
+- The segment behind p: head → ... → (l_prev) [not including l_prev]
+
+After two iterations (p = l_prev->prev = y_295):
+- p points to y_295
+- Thedllseg covers head → ... → y_295 (exclusive, last node is y_295->prev)
+- The dlistrep covers y_290 → ... → end
+
+Wait, but the dlistrep is always anchored at y_290 (which is l->next). So the dlistrep starting point doesn't change during traversal. What changes is:
+1. Which node is "current" (p)
+2. Which nodes are in the dllseg (shrinks from the right)
+
+So the invariant could be:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(l, p)
+```
+
+Wait, let me try this differently. Let me think about what the loop needs to represent:
+
+The loop body is `p = p->prev`. This reads p->prev and writes p.
+
+For the read to work, p must be in some spatial predicate's first argument position. So p needs to be the first arg of dlistrep or dllseg.
+
+For the write to work, p needs a data_at for its stack cell.
+
+Now, let me try:
+```
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+
+RP_pre_loop (p = l): dllseg_shape(head, 0, p_prev, l) * dlistrep_shape(l, p_prev). For this to match the original precondition `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`, we need p_prev = l_prev. So p_prev is an exists variable = l_prev.
+
+RP_iter_2 (p = l_prev): dllseg_shape(head, 0, p_prev, l_prev) * dlistrep_shape(l_prev, p_prev). 
+
+But wait, p_prev is a fixed exists variable. If it equals l_prev (from pre_loop), then:
+- dllseg_shape(head, 0, l_prev, l_prev) = (head == l_prev && emp). But we know head != l_prev (since l_prev != head from PROP). So this doesn't work because the dllseg would be non-empty but l_prev == l_prev makes it empty.
+
+This is exactly the problem mentioned in the SKILL.md fix strategies! The `p_prev` exists variable is fixed, but p changes.
+
+Solution: Use field expressions instead of exists variables for the boundary:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+Wait, let me think again. In fix strategy 4, the example is for backward traversal:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+The explanation: "Both arguments are C field expressions that re-evaluate automatically after p = p->prev. The invariant before and after are independently computed from the same expressions; QCP compares the results directly."
+
+Let me verify this against the RPs:
+
+RP_pre_loop (p = l):
+- dllseg_shape(head, 0, l->prev, l). From the original state, l->prev = l_prev, and the dllseg is (head, 0, l_prev, l). Matches!
+- dlistrep_shape(l->next, l). From dlistrep_shape(l, l_prev), l->next = y_290. So dlistrep_shape(y_290, l). Is this equivalent? dlistrep_shape(l, l_prev) ≈ data_at(&(l->next), y_290) * data_at(&(l->prev), l_prev) * dlistrep_shape(y_290, l). We need dlistrep_shape(y_290, l) which is exactly dlistrep_shape(l->next, l). The l->next and l->prev data_at's would be produced by the FIELD EXPRESSION — `p->next` in the argument creates data_at(&(p->next), ...). So yes, this creates the fields.
+
+Wait, but there's a subtlety. The field expression `p->next` in SEP creates `data_at(&(p->next), ...)`. And `p->prev` in SEP creates `data_at(&(p->prev), ...)`. But we already have individual data_at nodes in the RPs. The question is whether these field expressions interact correctly with the strategy unfoldings.
+
+Let me verify at RP_iter_2 (p = l_prev):
+- dllseg_shape(head, 0, l_prev->prev, l_prev). Now l_prev->prev = y_295 (from iter_3 RP). So dllseg_shape(head, 0, y_295, l_prev). This should be possible with the state in iter_2.
+  Actually wait, in iter_2, p = l_prev. So dllseg_shape(head, 0, l_prev->prev, l_prev). But l_prev is inside the original dllseg_shape(head, 0, l_prev, l). For `l_prev->prev` to be evaluated, we need data_at for l_prev->prev. In iter_2, the dllseg is still folded as (head, 0, l_prev, l), but to evaluate l_prev->prev, QCP would need to unfold the dllseg at l_prev. Actually, `p->prev` as a field expression forces QCP to unfold the predicate to access that field.
+
+Hmm, this gets complicated. Let me just try the simplest invariant first and see if it verifies.
+
+Actually, wait. Let me re-read fix strategy 4 more carefully:
+
+"Use field expressions on BOTH sides to explicitly expose the gap node's fields — the boundary becomes self-adapting and no strategy rule is needed at all."
+
+"Example: A DLL backward traversal loop (p = p->prev). Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted. Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)."
+
+OK so the working invariant for backward DLL traversal is:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+Now let me also check PROP. The loop condition is `p != head`. The precondition gives `head != 0` (implicitly from dllseg). 
+
+From the RPs:
+- pre_loop: PROP: `l@pre != 0`. p = l, so `p != 0`.
+- iter_2: PROP: `l@pre != head@pre`, `l@pre != 0`. p = l_prev, but l_prev is inside the dllseg and could be 0 or head.
+- iter_3: PROP: `l_prev != 0`, `l_prev != head@pre`, `l@pre != head@pre`, `l@pre != 0`.
+
+The PROP grows as nodes are unfolded. The constraints relate to the "current" cursor node being non-null and not equal to head.
+
+For the invariant, we need `p != 0` (since p dereferences p->prev and p->next). Also `head != 0`.
+
+Actually, looking at the expected PROP: we need to ensure p != 0 for field accesses. And from the code path, l != 0 is given (there's an `if (l == 0) return head;`), so p != 0 holds at entry.
+
+Let me now formalize the invariant:
+
+```
+/*@ Inv Assert p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+Wait, do I need PROP at all? The field expressions `p->prev` and `p->next` already evaluate p fields. But the PROP `p != 0` might be needed to ensure p is not null (so field access is valid).
+
+Actually, let me check. Looking at the SKILL.md example for forward traversal (strategy 1):
+```
+dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+No PROP constraints. But for the backward traversal (strategy 4), we have field expressions. Let me try without PROP first.
+
+Actually, wait. Looking at PROPs from RPs:
+- RP_pre_loop: `l@pre != 0` — this is `p != 0` since p = l
+- RP_iter_2: `l@pre != head@pre`, `l@pre != 0` 
+- RP_iter_3: `l_prev != 0`, `l_prev != head@pre`, `l@pre != head@pre`, `l@pre != 0`
+
+The `l@pre != 0` stays throughout. And p iterates through nodes. But the RPs don't have `p != 0` as PROP — they have `l@pre != 0`. Since l is constant throughout.
+
+Hmm, but for the invariant, I'm using `p->prev` and `p->next`. These require p to be non-null. Should I add `p != 0`?
+
+Actually, QCP should handle this. When the invariant contains `p->prev`, QCP knows that p must be non-null to access the field. So it's implicitly `p != 0`.
+
+But wait, the PROP are validated against all RPs. Let me check if `p != 0` holds in all RPs:
+- pre_loop: p = l, l != 0. Yes.
+- iter_2: p = l_prev. Is l_prev != 0? We know l_prev != head from iter_2 PROP, but is it != 0? We don't have that explicitly... Actually, l_prev is inside dllseg(head, 0, l_prev, l) which means it's a valid node in a non-null segment, so it's not 0. But the PROP doesn't explicitly say `l_prev != 0` in iter_2.
+
+Wait, let me check iter_2 PROP again: `l@pre != head@pre`, `l@pre != 0`. There's no `l_prev != 0`. But iter_3 has `l_prev != 0`.
+
+Hmm, but that's just the PROP captured at that RP. In iter_2, l_prev is still folded inside dllseg, so QCP hasn't yet "proven" l_prev != 0 explicitly. But the dllseg being non-empty at that point implies non-null.
+
+I think for the invariant, I might need `p != 0` or not. Let me try without any PROP first:
+```
+/*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+Let me now verify this by writing the file and running symexec.
+
+Actually wait, let me also think about has_permission. The loop body is `p = p->prev`. p is dereferenced (p->prev). p is also assigned to. p appears as the first argument in dlistrep_shape (p->next, p) — wait, no, p is the first argument of dlistrep_shape: `dlistrep_shape(p->next, p)`. The first argument is p->next, not p.
+
+So p does NOT appear as the first argument of any spatial predicate. The first arguments are head (in dllseg) and p->next (in dlistrep). p itself is not a first argument.
+
+But p is being dereferenced (p->prev) in the loop body. And p is not the first argument of any SEP predicate. So we need `has_permission(&p)`?
+
+Hmm, but p is a local variable. In QCP, local variables have their own data_at for their stack cells. Let me re-read section 2.6:
+
+"For each pointer-typed variable, check: (1) is it dereferenced/assigned-through in the loop body? (2) does it already appear as arg[0] of a SEP predicate? If yes to (1) and no to (2), add has_permission(&var)."
+
+p is dereferenced (p->prev) in the loop body. p is NOT arg[0] of any SEP predicate (arg[0] of dllseg is head, arg[0] of dlistrep is p->next). So yes, I need `has_permission(&p)`.
+
+Wait, but p appears as arg[3] of dllseg (p in `dllseg_shape(head, 0, p->prev, p)`). Does being an argument (not first) count? The checklist says "arg[0]" specifically. So no, being arg[3] doesn't count.
+
+Also, p->prev is a field expression in the SEP at arg[2] position. This creates `data_at(&(p->prev), ...)` which gives permission to p->prev, not p itself. And `data_at(p_284_addr, ...)` for p's stack cell is already present (we see it in LOCAL... wait no, LOCAL has `&p == p_284_addr` but there's also `data_at(p_284_addr, ...)` in SEP for the value of p).
+
+Actually wait, let me look again at the RPs. In RP_pre_loop SEP:
+```
+data_at ( p_284_addr , struct list* , l@pre )
+```
+This IS data_at for p's stack cell. This is included in SEP, not LOCAL. LOCAL has the binding `&p == p_284_addr`.
+
+Similarly, head and l have data_at in SEP:
+```
+data_at ( head_272_addr , struct list* , head@pre )
+data_at ( l_275_addr , struct list* , l@pre )
+```
+
+These data_at bindings for the stack variables are created by QCP automatically when the variables are in the precondition.
+
+The question is: does the invariant need to carry these stack-variable data_at bindings for head, l, and p?
+
+Looking at the SKILL.md:
+- "SEP — from diff analysis" section says: "If a pointer variable appears as a shape predicate argument, QCP handles its binding automatically — no extra data_at needed."
+
+So p appears in dllseg (arg[3]) and in dlistrep (arg[1]). Also, p->prev appears in dllseg (arg[2]) and p->next appears in dlistrep (arg[0]). So QCP should handle these bindings automatically.
+
+But wait, head appears only in dllseg (arg[0]). l does NOT appear in any SEP predicate argument! All references in the RPs use l@pre, which is the pre-state value. But in the invariant, program variables are used, not @pre values.
+
+So after Inv Assert replaces the state, l would be dropped unless it appears in the invariant. But l is not directly used in the loop body. The loop body only uses p. Post-loop, `return p`.
+
+Hmm, but looking at the precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`. The parameters of the function are l and head. The loop only uses p and head. After the loop, it returns p.
+
+Let me think about what needs to be in the invariant:
+1. Everything the loop body accesses: p (dereferenced, assigned), head (compared against)
+2. Everything needed after the loop: p (returned)
+
+The SKILL.md says: "Inv Assert replaces the entire program state at the loop head. Any pre-loop stack binding not carried into the invariant may produce unprovable manual proof obligations."
+
+So we need: p, head, and... l? l is an input parameter but is it used after the invariant? No, l is used to initialize p (`p = l`) before the loop. After that, l is not accessed.
+
+But `p = l` is BEFORE the invariant. So at the point of the invariant, p already has its value. The invariant just needs to describe the state with p and head.
+
+Actually, wait. The invariant goes between `p = l;` and `while (p != head)`. So:
+```c
+p = l;
+/*@ Inv Assert ... */
+while (p != head) {
+    p = p->prev;
+}
+```
+
+At the invariant point, p = l. The invariant needs to be consistent with this state.
+
+So for the invariant: `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)` with p = l.
+
+Now, does head need has_permission? head is compared against p in the loop condition. head appears as arg[0] of dllseg_shape. So head's stack binding is handled. No has_permission needed.
+
+Does p need has_permission? p is not arg[0] of any predicate. p is dereferenced (p->prev) and assigned. So yes, p needs has_permission.
+
+But wait, `p->prev` is arg[2] of dllseg_shape. This is a field expression that creates data_at for p->prev. The expression p->prev also implies p is accessible. But the data_at for p->prev only gives permission to the HEAP field at p->prev, not to p's stack cell.
+
+Hmm, let me think again. The loop body is `p = p->prev`. This reads p->prev (a heap field) and writes p (a stack cell). Reading p->prev requires permission to the heap at p->prev. Writing p requires permission to p's stack cell.
+
+The field expression `p->prev` in dllseg's arg[2] creates data_at for p->prev's heap cell. This should give permission to read p->prev.
+
+For the write to p: p is a local variable. QCP tracks locals through LOCAL bindings. The Inv Assert replaces the program state. Does the p data_at need to be in the invariant?
+
+Looking at the SKILL.md, the example for forward traversal doesn't include has_permission(&p) when p is arg[3] of dllseg and arg[0] of dlistrep.
+
+But in our case, p is NOT arg[0] of anything. p is arg[3] of dllseg and arg[1] of dlistrep. 
+
+Let me just try the invariant first without has_permission and see if it fails.
+
+Let me proceed:
+
+```
+/*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+[TEXT]
+Now let me analyze the RPs to construct the invariant.
+
+**Loop analysis**:
+- `p = p->prev` — backward traversal of a DLL
+- `p` starts at `l`, moves backward until `p == head`
+- Precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`
+- Postcondition: `dlistrep_shape(__return, 0)` where `__return = p`
+
+**RP Diff Analysis**:
+- RP_pre_loop: `dllseg_shape(head@pre, 0, l_prev, l@pre)` + `dlistrep_shape(l@pre, l_prev)`, p = l
+- RP_iter_2 (p = l_prev): dllseg unchanged, dlistrep now `(y_290, l@pre)` (l was unfolded)
+- RP_iter_3 (p = y_295 = l_prev->prev): dllseg shrinks to `(head, 0, y_295, l_prev)`, dlistrep stays at `(y_290, l@pre)`
+
+This matches SKILL.md fix strategy 4: field expressions on both sides of the boundary. The invariant is `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)`.
+
+**Step 2.7: Assemble invariant.** Let me write the invariant file and verify.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/workspace/iter_back_unrolled.c
+
+============================================================
+[THINKING] (248 chars)
+============================================================
+Good. Now I'll write the invariant file. The invariant is:
+
+```
+/*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+Let me create the inv file by copying the original and replacing /* INFILL */ with the invariant.
+
+[TEXT]
+Now let me write the invariant file (Step 3.1).
+
+[TOOL: Bash]
+Bash: cp /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c
+
+============================================================
+[THINKING] (56 chars)
+============================================================
+Now I need to replace `/* INFILL */` with the invariant.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /* INFILL */', 'new_string': '     /*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next,
+
+============================================================
+[THINKING] (30 chars)
+============================================================
+I need to read the file first.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c
+
+============================================================
+[THINKING] (63 chars)
+============================================================
+Good. Now let me replace the INFILL comment with the invariant.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /* INFILL */', 'new_string': '     /*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next,
+
+============================================================
+[THINKING] (87 chars)
+============================================================
+Good. Now Step 3.2: Verify via symexec. First delete old proof files, then run symexec.
+
+[TEXT]
+**Step 3.2: Verify invariant via symexec.**
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (62 chars)
+============================================================
+Output too large. Let me check the tail and grep for Admitted.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v 2>/dev/null || echo "No manual proof file or 0"
+
+[TOOL: Bash]
+Bash: grep -i "fatal error\|error\|Error" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log | head -10
+
+============================================================
+[THINKING] (84 chars)
+============================================================
+Symexec passed, but we have 3 Admitted proofs. Let me check what witnesses they are.
+
+[TEXT]
+Symexec passed, but 3 Admitted. Let me diagnose the failures.
+
+[TOOL: Bash]
+Bash: grep "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (75 chars)
+============================================================
+Let me get more context around each Admitted to identify the witness types.
+
+[TOOL: Bash]
+Bash: grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (39535 chars)
+============================================================
+OK so we have:
+1. `entail_wit_1` — invariant entry failure
+2. `entail_wit_2` — invariant preservation failure
+3. `return_wit_1` — loop exit failure
+
+All three are admitted. That's a lot of failures. Let me think about what's wrong.
+
+The invariant is: `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)`
+
+At the invariant entry point (after `p = l`), the state from precondition is:
+- `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`
+- And after p = l, we have p = l
+
+The invariant says: `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)` with p = l.
+
+So:
+- dllseg_shape(head, 0, l->prev, l) — this should match dllseg_shape(head, 0, p->prev, p) with p = l. l->prev = l_prev. So this matches.
+- dlistrep_shape(p->next, p) = dlistrep_shape(l->next, l)
+
+But the precondition gives dlistrep_shape(l, l_prev), NOT dlistrep_shape(l->next, l). These are different!
+
+dlistrep_shape(l, l_prev) is a full list from l (with prev = l_prev).
+dlistrep_shape(l->next, l) is the sublist from l->next (with prev = l).
+
+For the invariant to entail from the precondition, we need:
+dlistrep_shape(l, l_prev) |- dlistrep_shape(l->next, l)
+
+Is this a valid entailment? Let's unfold dlistrep_shape(l, l_prev):
+dlistrep_shape(l, l_prev) = (l == 0 && emp) || exists t, data_at(&(l->next), t) * data_at(&(l->prev), l_prev) * dlistrep_shape(t, l)
+
+Since l != 0 (l != 0 from PROP), this becomes:
+exists t, data_at(&(l->next), t) * data_at(&(l->prev), l_prev) * dlistrep_shape(t, l)
+
+Now, dlistrep_shape(l->next, l) = dlistrep_shape(t, l). This IS present in the unfolded form! But the unfolded form also has data_at(&(l->next), t) and data_at(&(l->prev), l_prev).
+
+The issue is: the invariant wraps dlistrep_shape(l->next, l) as the whole SEP for this part, but there are also data_at fields for l->next and l->prev that need to be accounted for.
+
+With the field expressions: `dlistrep_shape(p->next, p)` = `dlistrep_shape(l->next, l)`. The field expression `l->next` creates data_at for l->next. But this data_at might not match the one from the precondition's unfolding.
+
+Actually wait, let me think about this differently. The field expression `p->next` as the first argument of dlistrep creates `data_at(&(p->next), ...)`. But in the unfolded state, we have `data_at(&(l->next), t)` and `dlistrep(t, l)`. The field expression `p->next` = `l->next` creates another data_at for the same field!
+
+So we have a dup_data_at situation:
+- From precondition unfolding: data_at(&(l->next), t)
+- From field expression l->next in invariant: data_at(&(l->next), ???)
+
+This is a dup_data_at! The field expression creates a redundant data_at.
+
+Wait, but the SKILL.md fix strategies say to use field expressions for the backward traversal case. Let me re-read...
+
+"Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)"
+"Why it works: Field expressions resolve to concrete values each time the invariant is checked. Changing p automatically shifts both sides of the boundary. Field expressions on both sides also distribute ownership across two different fields (p->prev and p->next), one per predicate, avoiding dup_data_at."
+
+So according to the fix strategy, this SHOULD work. The reasoning is that `p->prev` is used in dllseg and `p->next` is used in dlistrep — these are DIFFERENT fields, so no dup_data_at.
+
+But the issue is that `dlistrep_shape(l->next, l)` includes l->next as a field expression in arg[0] position, which creates data_at(&(l->next), ...). And when dlistrep(l->next, l) is unfolded later, it would also create data_at(&(l->next->next), ...) and data_at(&(l->next->prev), l) — these are different from l->next.
+
+Hmm, wait. The field expression `p->next` in SEP creates `data_at(&(p->next), ...)`. But the predicate `dlistrep_shape(p->next, p)` — the first argument is a field expression `p->next`. So QCP might use `p->next` as a symbolic argument and wrap it differently.
+
+Actually, I think the issue might be more subtle. Let me check if the problem is with the entry witness (entail_wit_1). The precondition provides:
+- dllseg_shape(head, 0, l_prev, l)
+- dlistrep_shape(l, l_prev)
+
+The invariant requires:
+- dllseg_shape(head, 0, p->prev, p) with p = l → dllseg_shape(head, 0, l->prev, l) ✓
+- dlistrep_shape(p->next, p) with p = l → dlistrep_shape(l->next, l)
+
+So the question is: does `dlistrep_shape(l, l_prev)` entail `dlistrep_shape(l->next, l)`?
+
+From unfolding: dlistrep_shape(l, l_prev) = (l == 0 && emp) || exists n, data_at(&(l->next), n) * data_at(&(l->prev), l_prev) * dlistrep_shape(n, l)
+
+So dlistrep_shape(l, l_prev) |- dlistrep_shape(n, l) where n = l->next. But dlistrep_shape(l->next, l) = dlistrep_shape(n, l). Yes, this is the same thing. But there's a subtlety: the field expression `l->next` in `dlistrep_shape(l->next, l)` creates data_at(&(l->next), ???) which might conflict with the data_at(&(l->next), n) from the unfolding.
+
+Actually, I think the field expression in arg[0] position is special. When `p->next` is the first argument of dlistrep, QCP might treat it as: "there exists something at p->next, let me call it X, and dlistrep_shape(X, p)". The field expression declares ownership of the field, and the predicate owns the rest.
+
+But the conflict is: data_at for &(l->next) appears in both the field expression and the unfolding of dlistrep_shape(l, l_prev).
+
+Hmm, but looking at the SKILL.md, the field expression strategy specifically says it avoids dup_data_at by using DIFFERENT fields on each side. Let me re-read:
+
+"Field expressions on both sides also distribute ownership across two different fields (p->prev and p->next), one per predicate, avoiding dup_data_at."
+
+So the plan is:
+- dllseg uses p->prev (one field)
+- dlistrep uses p->next (different field)
+- No overlap, no dup_data_at
+
+But the problem might be the entry: when entering the loop, the precondition gives `dlistrep_shape(l, l_prev)`, which when unfolded at l produces data_at for BOTH l->prev AND l->next. The invariant uses `p->next` (i.e., l->next) in dlistrep_shape and `p->prev` (i.e., l->prev) in dllseg. These are DIFFERENT fields. So there shouldn't be a dup_data_at.
+
+Unless... the problem is that strategies can't fold dlistrep_shape(l, l_prev) into dlistrep_shape(l->next, l). The field expression l->next creates an explicit data_at, but the folded dlistrep_from precond doesn't expose l->next as a separate data_at.
+
+I think the issue might actually be simpler. Let me look at this from a different angle.
+
+At loop entry, the program state has:
+- dllseg_shape(head, 0, l_prev, l) — folded
+- dlistrep_shape(l, l_prev) — folded
+- p = l (stack binding)
+
+The invariant is:
+- dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+
+For the entry (entail_wit_1): QCP needs to show that the program state (precondition + p=l) satisfies the invariant.
+
+The invariant dllseg_shape(head, 0, p->prev, p) = dllseg_shape(head, 0, l->prev, l). This matches the precondition's dllseg directly. ✓
+
+The invariant dlistrep_shape(p->next, p) = dlistrep_shape(l->next, l). The precondition has dlistrep_shape(l, l_prev). Can strategies prove:
+dlistrep_shape(l, l_prev) = dlistrep_shape(l->next, l)?
+
+No, they are NOT equal! dlistrep_shape(l, l_prev) includes node l, while dlistrep_shape(l->next, l) starts from l->next.
+
+But we can unfold dlistrep_shape(l, l_prev) at l (rule 5 of dll_nodata) to get:
+data_at(&(l->next), n) * data_at(&(l->prev), l_prev) * dlistrep_shape(n, l)
+
+And then we have dlistrep_shape(n, l) = dlistrep_shape(l->next, l). But we also have the data_at for l->next and l->prev. The invariant has field expressions l->next and l->prev in predicate arguments, which should create data_at for those fields.
+
+The question is: can QCP fold the data_at values back into the field expressions in the invariant? In other words:
+- The unfolded state has data_at(&(l->next), n), data_at(&(l->prev), l_prev), dlistrep_shape(n, l)
+- The invariant needs dllseg_shape(head, 0, l->prev, l) and dlistrep_shape(l->next, l)
+- For dllseg: we need to fold dllseg_shape(head, 0, l_prev, l) from the unfolded dllseg. This is straightforward.
+- For dlistrep: we need dlistrep_shape(l->next, l). The unfolded state has data_at(&(l->next), n) where n = l->next — but this is exactly the data_at for the field expression l->next! And dlistrep_shape(n, l) is dlistrep_shape(l->next, l).
+
+So the entailment should work:
+1. Unfold dlistrep_shape(l, l_prev) to get data_at for l->next and l->prev plus dlistrep_shape(n, l)
+2. The field expression l->next evaluates to n (from data_at(&(l->next), n))
+3. So dlistrep_shape(l->next, l) = dlistrep_shape(n, l) ✓
+
+Unless the issue is with step 1 — the strategy might not automatically unfold dlistrep_shape(l, l_prev) for the entailment check.
+
+Hmm, but this should be what strategies handle. Rule 1 of dll_nodata (the simplest strategy) might unfold the left side.
+
+Wait, actually, I realize the strategies operate differently during entailment checking. Let me think about what the strategies do.
+
+Actually, maybe the issue is different. Let me try a simpler approach first and see if it verifies.
+
+Maybe the issue is that I'm missing PROP. Let me try adding `p != 0` to the invariant:
+```
+/*@ Inv Assert p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+Or maybe I need `p != head` in the PROP since that's the loop condition.
+
+Actually, the loop condition is checked at the start of each iteration, and is assumed true inside the loop body. The invariant doesn't need to include the loop condition — it's added by the semantics of `Inv Assert`.
+
+Let me try adding p != 0 first, as it might be needed for the field expressions to evaluate.
+
+But wait, actually, let me think about has_permission. p is dereferenced in the loop body (p->prev), and p is NOT arg[0] of any SEP predicate. So p needs has_permission. Let me add that.
+
+Actually, looking at entail_wit_1 failure: this is entry. The precondition + p=l must entail the invariant. If has_permission is needed, adding it should help.
+
+But also entail_wit_2 (preservation) and return_wit fail. Let me think about what's common to all three.
+
+For preservation: invariant before iteration + loop condition (p != head) + loop body (p = p->prev) must entail invariant after iteration.
+
+Let me think about what happens:
+Before: dllseg(head, 0, p->prev, p) * dlistrep(p->next, p), p != head
+After p = p->prev: dllseg(head, 0, (l_prev)->prev, l_prev) * dlistrep(l->next, l_prev) ... wait, p was some node, now it's p' = p->prev.
+
+The field expressions should automatically adapt. But let me check:
+- Before: dllseg(head, 0, p->prev, p) with p = some_node. So dllseg(head, 0, some_node->prev, some_node).
+- After p' = p->prev = some_node->prev: dllseg(head, 0, p'->prev, p') = dllseg(head, 0, some_node->prev->prev, some_node->prev).
+- Before: dlistrep(p->next, p) = dlistrep(some_node->next, some_node).
+- After: dlistrep(p'->next, p') = dlistrep(some_node->prev->next, some_node->prev).
+
+The question is: are these two states logically equivalent? Since we're moving one node from dllseg to... actually, we're not changing dlistrep at all! dlistrep(p->next, p) = dlistrep(some_node->next, some_node) before, and dlistrep(some_node->prev->next, some_node->prev) after. These are different nodes!
+
+Wait, that's the problem. p->next before = some_node->next. p->next after = some_node->prev->next = some_node! (For a DLL, prev->next = node).
+
+So before: dlistrep(some_node->next, some_node).
+After: dlistrep(some_node, some_node->prev).
+
+These are NOT the same! The dlistrep starts at a different node. But they describe the same list from different starting points.
+
+Before: dlistrep(node->next, node). This is the sublist starting from node->next to the end.
+After: dlistrep(node, node->prev). This is the full list from node to the end (since node->prev is now the current node).
+
+The difference is that node has moved from being "current" (inside dllseg) to being part of the sublist "ahead". Since we're moving backward, nodes we pass through become part of the "ahead" sublist.
+
+So the dlistrep should be dlistrep(l, p) where l is the original starting point (constant) and p changes. But that seems too simple — and conflicts with the SKILL.md fix strategy 4.
+
+Let me re-read strategy 4 more carefully:
+
+"Example: A DLL backward traversal loop (p = p->prev). Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted — after p changes, p_prev is a fixed symbol; strategies must contract dllseg from the right, a rule that does not exist. Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)"
+
+OK so the fix replaces exists variable `p_prev` with field expressions `p->prev` and `p->next`. Let me carefully trace through the preservation:
+
+Before iteration: p = node. Invariant: dllseg(head, 0, node->prev, node) * dlistrep(node->next, node).
+Loop condition: node != head.
+Loop body: p = p->prev = node->prev.
+
+After iteration: p = node->prev. Invariant: dllseg(head, 0, (node->prev)->prev, node->prev) * dlistrep((node->prev)->next, node->prev).
+
+For a DLL: (node->prev)->next = node. So:
+After: dllseg(head, 0, node->prev->prev, node->prev) * dlistrep(node, node->prev).
+
+Now, the "before" state has:
+- dllseg(head, 0, node->prev, node) — from head to node (exclusive), last node = node->prev
+- dlistrep(node->next, node) — from node->next to end
+
+After p = node->prev, the "after" state should have:
+- dllseg(head, 0, node->prev->prev, node->prev) — from head to node->prev (exclusive), last node = node->prev->prev
+- dlistrep(node, node->prev) — from node to end
+
+Are these equivalent? Let me think...
+
+Before state, unfold dllseg at node->prev:
+dllseg(head, 0, node->prev, node) unfolds to:
+  data_at for node->prev, and dllseg(head, 0, node->prev->prev, node->prev) (if there's another node before).
+Wait, that's not exactly how dllseg unfolds. Let me check the definition:
+dllseg(x, xp, yp, y) = (x == y && xp == yp && emp) || exists z, data_at(x->next, z) * data_at(x->prev, xp) * dllseg(z, x, yp, y)
+
+So it unfolds from the LEFT (x), not from the right. To access node->prev (which is at the right end of the segment), strategies would need to unfold the entire segment.
+
+Hmm, but the field expression `p->prev` (= node->prev) in the invariant argument position tells QCP: "there's a data_at for p->prev". So the strategies should be able to expose this data_at.
+
+Actually, I think the key issue is: for the preservation (entail_wit_2), the invariant before and after have the same form but with p replaced. Field expressions make this automatic:
+- Before: dllseg(head, 0, p->prev, p) * dlistrep(p->next, p) with p = some_node
+- After p' = p->prev: same formula with p' instead of p
+
+But QCP doesn't just substitute p' for p. It evaluates the invariant independently in the new state. So in the new state where p = p' = node->prev, it evaluates:
+- dllseg(head, 0, node->prev->prev, node->prev) — this is a segment from head to node->prev (excl)
+- dlistrep((node->prev)->next, node->prev) = dlistrep(node, node->prev) — since node->prev->next = node
+
+For the preservation check, QCP needs to show:
+Before state (with p = node) |- After invariant (with p = node->prev)
+
+Before state: dllseg(head, 0, node->prev, node) * dlistrep(node->next, node)
+After invariant needs: dllseg(head, 0, node->prev->prev, node->prev) * dlistrep(node, node->prev)
+
+To prove this entailment, strategies need to show that the before state implies the after invariant. This requires:
+1. The dllseg can be "folded" differently
+2. The dlistrep can be extended by one node
+
+This is non-trivial and might require specific strategy rules. Strategy rule 7 or 8 might handle this kind of transition.
+
+Let me look at the strategies file to understand what rules exist.
+
+Actually, I can't read the strategies file since it's not in the whitelist. But I know from SKILL.md that strategies operate on the predicates.
+
+OK let me try a different approach. Instead of the field-expression invariant from strategy 4, let me try using exists variables, which seems more natural:
+
+```c
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(l, p)
+ */
+```
+
+Here p_prev is the exists variable representing p->prev. And the dlistrep is anchored at l (constant; the original starting point of the traversal).
+
+Wait, but the shows dlistrep starts at l (constant). In RP_pre_loop, p = l, so dlistrep_shape(l, l) — that doesn't work as argued earlier because dlistrep_shape(l, l) is the empty case or a non-empty list where prev = l.
+
+Hmm, let me reconsider. Looking at the RPs:
+- pre_loop: dlistrep(l@pre, l_prev)
+- iter_2: dlistrep(y_290, l@pre) where y_290 = l->next
+- iter_3: dlistrep(y_290, l@pre) — same
+
+So the dlistrep is always anchored at l@pre (pre-state value of l). It starts as dlistrep(l, l_prev) and becomes dlistrep(l->next, l) after l is unfolded.
+
+For the invariant, l is constant. So dlistrep_shape(l, p) would work if the prev pointer of l is p. But at pre_loop, p = l, so prev would be l, not l_prev. That's wrong.
+
+What about dlistrep_shape(l, p->next)? At pre_loop, p = l, so prev = l->next = y_290. At iter_2, p = l_prev, so prev = l_prev->next = l. Hmm, dlistrep(l, y_290) at pre_loop — but we know l_prev is the prev of l, not l->next.
+
+I think the cleanest invariant might be:
+```
+exists p_prev,
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p_next, p)
+```
+Where p_prev and p_next are exists variables.
+
+At pre_loop (p = l): dllseg(head, 0, p_prev, l) * dlistrep(p_next, l)
+With p_prev = l_prev and p_next = l.
+
+For the precondition to entail this:
+dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev) |- exists p_prev, p_next, dllseg(head, 0, p_prev, l) * dlistrep(p_next, l)
+With p_prev = l_prev, p_next = l: dllseg(head, 0, l_prev, l) * dlistrep(l, l)
+
+But dlistrep(l, l_prev) != dlistrep(l, l). These have different prev pointers! l_prev != l (since p != head, and head->...->l_prev->l).
+
+So this doesn't work either.
+
+OK let me try another approach. What if the invariant just carries the full list? After the invariant, we have the precondition's state unchanged:
+
+```
+/*@ Inv Assert dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev) * data_at(&p, struct list*, p)
+ */
+```
+
+But that's not really an invariant for the loop — it doesn't describe p's movement.
+
+Let me think about what invariants are in the results. Let me look at the `test_results` directories...
+
+Actually wait, the SKILL.md says I can't read other agents' result directories. Let me focus on solving this.
+
+OK, let me try re-thinking the problem. The loop:
+```c
+p = l;
+/*@ Inv Assert ??? */
+while (p != head) {
+    p = p->prev;
+}
+return p;
+```
+
+After the loop, p == head. The postcondition is `dlistrep_shape(__return, 0)`. So we need to prove that when p == head, `dlistrep_shape(p, 0)` holds.
+
+From the precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)`.
+The full list from head is: head → ... → l_prev → l → ... → end.
+
+When the loop ends, p == head. We need `dlistrep_shape(head, 0)`.
+
+Hmm, from the precondition, the full list from head can be obtained by:
+dllseg(head, 0, l_prev, l) unfolded into data_at nodes from head to l_prev, plus dlistrep(l, l_prev).
+
+Actually, maybe the invariant should carry the entire list starting from head, and p is just a cursor:
+
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+ */
+```
+
+Wait, I tried this before and the issue was p_prev is fixed. But this would still fail preservation...
+
+Let me try yet another approach. What if SEP just uses field expressions, but I also add has_permission and PROP?
+
+Actually, let me look at this from the strategy level. The strategies for dll_nodata include rules for contracting dllseg from the right and extending dlistrep from the left. Let me check what rules are available.
+
+Hmm, from the symexec log I can see rules 1-8 and 11. Let me check the parsed log output. The symexec log mentions:
+"Start to parse rule 1 in file dll_nodata"
+...
+"Start to parse rule 8 in file dll_nodata"
+"Start to parse rule 11 in file dll_nodata"
+
+So rules 1-8 and 11 exist. I need to understand what they do, but I can't read the strategies file (not whitelisted).
+
+Let me take a step back. The SKILL.md fix strategy 4 explicitly gives me the solution for this exact case:
+
+"Example: A DLL backward traversal loop (p = p->prev). Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted — after p changes, p_prev is a fixed symbol; strategies must contract dllseg from the right, a rule that does not exist. Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)"
+
+So the field expression approach IS the fix. But I'm getting 3 Admitted, not 1. So maybe there are additional issues beyond what strategy 4 fixes.
+
+Let me try adding `has_permission(&p)`. p is NOT arg[0] of any SEP predicate but IS dereferenced. According to the checklist, I should add `has_permission(&p)`.
+
+Actually, wait. Let me check: p->prev is a field expression used in dllseg (arg[2]). And p->next is used in dlistrep (arg[0]). These field expressions might already give p enough "permission." The field expression p->prev creates data_at for the heap at p->prev, which kind of implies p is a valid pointer. And p->next similarly.
+
+But `has_permission(&p)` gives permission to p's STACK cell (for writing to p). The loop body writes to p (p = p->prev). So p's stack cell needs permission.
+
+Hmm, but looking at QCP, local variables are managed differently. The Inv Assert replaces the entire program state. If p's stack binding is not carried into the invariant, QCP might lose track of p.
+
+Actually, p appears in the invariant (in field expressions p->prev and p->next), so QCP knows about p. The field expression implies p's value is known, even if the stack cell isn't explicitly owned.
+
+But wait, to WRITE to p (p = p->prev), QCP needs a data_at for p's stack cell. The field expression p->prev gives data_at for the heap at p->prev, not for p's stack cell. So we might need has_permission(&p).
+
+Hmm, but in the forward traversal example: `dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. Here p is arg[3] of dllseg and arg[0] of dlistrep. p is NOT dereferenced through a field expression — it's used directly as a predicate argument. And the example doesn't need has_permission. But p IS the first argument of dlistrep, which gives it implicit permission.
+
+In our backward traversal invariant: `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)`. p is arg[3] of dllseg (direct use) and arg[1] of dlistrep (direct use). But the first arguments are head and p->next respectively. So p is NOT arg[0] of any predicate.
+
+Since p is dereferenced (p->prev in the loop body), and p is NOT arg[0] of any SEP predicate, according to the checklist I need `has_permission(&p)`.
+
+Let me add it: `/*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p) * has_permission(&p) */`
+
+Wait but there's a "PROHIBITED" note in SKILL.md:
+"has_permission: Can trigger dup_data_at_error when overlapping with shape predicate fields. Avoid has_permission unless strictly required per 2.6."
+
+So I should avoid has_permission unless needed. Since p is used as a direct argument (not first, but still an argument) in predicates, QCP might handle its binding. Let me try without has_permission first and see if adding it helps.
+
+Actually, I already tried without and got 3 Admitted. Let me try with has_permission.
+
+But wait, I also need to think about the PROP. The RPs have PROP constraints that aren't in my invariant. Let me check what I might need:
+
+From RP_pre_loop: l@pre != 0. This is the starting state. In the invariant, this would be: l != 0? But l is a constant parameter. The code has `if (l == 0) return head;` before the loop, so l != 0 is guaranteed.
+
+Actually, I should probably check if PROP matters. Let me try a few variations:
+
+Option A (current - field expressions, no PROP, no has_permission):
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+Result: 3 Admitted
+
+Option B (add p != 0 PROP):
+```
+p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+Option C (add has_permission):
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p) * has_permission(&p)
+```
+
+Option D (both PROP and has_permission):
+```
+p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p) * has_permission(&p)
+```
+
+Let me try Option B first, since SKILL.md says "Prefer adjusting PROP over SEP."
+
+Actually wait, let me think more about what might cause all 3 witnesses to fail.
+
+entail_wit_1 (entry): Precondition + p = l must entail invariant. The precondition has dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev). The invariant has dllseg(head, 0, p->prev, p) * dlistrep(p->next, p) with p = l. So:
+- dllseg(head, 0, l_prev, l) vs dllseg(head, 0, l->prev, l). Since l->prev = l_prev, these match. ✓
+- dlistrep(l, l_prev) vs dlistrep(l->next, l). These are different!
+
+For entry, strategies need to show: dlistrep(l, l_prev) |- dlistrep(l->next, l).
+This requires unfolding dlistrep(l, l_prev) at l.
+
+entail_wit_2 (preservation): invariant + loop body must entail invariant after.
+This requires transitioning from dllseg(head, 0, p->prev, p) * dlistrep(p->next, p) to dllseg(head, 0, (p_prev)->prev, p_prev) * dlistrep((p_prev)->next, p_prev) where p_prev = p->prev.
+
+return_wit (exit): invariant + p == head must entail postcondition.
+So dllseg(head, 0, head->prev, head) * dlistrep(head->next, head) |- dlistrep(head, 0).
+With p == head.
+
+Let me focus on entry first. Maybe the solution involves using `p` directly instead of `p->next`:
+
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p, p->next)
+```
+
+Hmm, this doesn't make sense because dlistrep(p, p->next) means prev = p->next, but we need prev = p->prev.
+
+Actually wait, what about:
+```
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+with p_prev as an exists variable?
+
+From the SKILL.md: "Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted."
+
+So this one has only 1 Admitted (presumably entail_wit_2 - preservation). That's better than 3! The other two (entry and return) presumably work.
+
+The issue is that after p = p->prev, p changes but p_prev stays the same fixed symbol. The invariant after becomes `dllseg_shape(head, 0, p_prev, p_new) * dlistrep_shape(p_new, p_prev)` where p_new is the new p (= old p->prev = old p_prev). But p_prev is a fixed exists variable, not tied to p's new prev.
+
+Wait, actually, if p_prev was initialized as p->prev in the entry, then after p = p->prev (so p_new = p_prev), the invariant becomes:
+- dllseg(head, 0, p_prev, p_prev) — but dllseg(x, xp, x, x) = (x == x && xp == x && emp). So dllseg(head, 0, p_prev, p_prev) means head == p_prev. But p_prev != head (we're in the loop).
+
+This is why the exists variable approach fails preservation! After p moves to where p_prev was, the dllseg becomes empty, which is wrong.
+
+OK so the field expression approach (strategy 4) should work for preservation, but I'm getting entry and return failures too. Let me figure out what's different.
+
+For entry with the field expression invariant:
+Precondition: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)
+Invariant: dllseg(head, 0, l->prev, l) * dlistrep(l->next, l)
+
+The dllseg parts match since l->prev = l_prev. The dlistrep part: dlistrep(l, l_prev) vs dlistrep(l->next, l).
+
+Can dlistrep_shape be "unfolded once" to match? dlistrep(l, l_prev) |-- dlistrep(l->next, l)?
+
+Unfolding dlistrep(l, l_prev):
+exists n, data_at(&(l->next), n) * data_at(&(l->prev), l_prev) * dlistrep(n, l)
+
+Now dlistrep(l->next, l) = dlistrep(n, l) with n = l->next from the data_at.
+
+So the entailment is: data_at(&(l->next), n) * data_at(&(l->prev), l_prev) * dlistrep(n, l) |- dlistrep(l->next, l)
+
+But dlistrep(l->next, l) is a folded predicate with a field expression argument. The field expression l->next creates an implicit data_at. So dlistrep(l->next, l) ≈ exists X, data_at(&(l->next), X) * dlistrep(X, l).
+
+So the entailment is: data_at(&(l->next), n) * data_at(&(l->prev), l_prev) * dlistrep(n, l) |- data_at(&(l->next), X) * dlistrep(X, l)
+
+With X = n, we get data_at(&(l->next), n) * dlistrep(n, l) which is a subset of the left side (missing data_at(&(l->prev), l_prev)).
+
+This should be a valid entailment (the left side has extra = can be dropped). So entry should work!
+
+Unless the strategies don't handle this unfold+match pattern. Let me check what rules are needed:
+
+For the entry entailment:
+1. Strategy needs to unfold dlistrep(l, l_prev) at l → rule 5 (dlistrep_shape unfold)
+2. Then match the result against dlistrep(p->next, p) where p->next = l->next
+
+Actually wait, maybe the problem is with the dllseg, not the dlistrep. The precondition has `dllseg_shape(head, 0, l_prev, l)` and the invariant has `dllseg_shape(head, 0, p->prev, p)` with p = l. So we need `dllseg_shape(head, 0, l_prev, l) |- dllseg_shape(head, 0, l->prev, l)`.
+
+The left side has l_prev which is a With-clause variable. The right side has l->prev which is a field expression. For these to match, QCP needs to evaluate l->prev. But in the precondition state, l->prev is not yet exposed (it's inside dlistrep_shape(l, l_prev)).
+
+So QCP first needs to unfold dlistrep_shape(l, l_prev) to expose data_at(&(l->prev), l_prev). Only then can it evaluate l->prev = l_prev.
+
+But is the strategy smart enough to do this? Maybe not. The dllseg is on the left side of the assertion; QCP might try to match dllseg(head, 0, l_prev, l) on the left with dllseg(head, 0, l->prev, l) on the right. Since l->prev can't be evaluated without unfolding dlistrep first, this might cause the entry failure.
+
+This could be the root cause of all three failures! The field expression requires data_at for the field, but the strategies can't produce it in the right order.
+
+If this is the case, then maybe I need to add PROP to expose the equality: `p->prev == p_prev`.
+
+Hmm wait, there's another possibility. Maybe the problem is simpler. Let me re-read the SKILL.md fix strategies for the backward traversal case:
+
+"Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p) — both arguments are C field expressions that re-evaluate automatically after p = p->prev. The invariant before and after are independently computed from the same expressions; QCP compares the results directly."
+
+OK, it says "QCP compares the results directly." This means the invariant is evaluated independently in the before and after states, and QCP compares them. The evaluation is not done through strategy unfolding but through direct computation.
+
+But wait, in the invariant entry, QCP needs to EVALUATE the invariant in the current state. If p->prev is l->prev, and the current state has dlistrep(l, l_prev) (folded), QCP might not be able to evaluate l->prev without unfolding.
+
+Unless... QCP treats dlistrep_shape(l, l_prev) as implying data_at for l->next and l->prev (implicitly, as the definition of dlistrep). So when it encounters l->prev, it knows from the predicate structure that l->prev = l_prev.
+
+I think this requires specific strategy rules. Actually, the strategies might treat field expressions in predicate arguments specially.
+
+OK let me just try a few variations and see what works. Let me start with the simple version:
+
+1. Try: `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)` + `has_permission(&p)`
+2. Try: `dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)` (exists var approach - should give 1 Admitted)
+3. Try: same as 2 with field expressions
+
+Wait, actually now I realize I should just try different things and see. Let me start with adding has_permission.
+
+Actually, hold on. Let me reconsider the problem. 3 Admitted witnesses is a lot. Maybe the invariant structure is fundamentally wrong.
+
+Let me think about what the correct invariant SHOULD be for backward traversal.
+
+Given precondition: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)
+And loop: p = l; while (p != head) p = p->prev;
+Postcondition: dlistrep(__return, 0) where __return = p
+
+The full list structure is: head → ... → l_prev → l → ... → 0
+
+During backward traversal from l to head:
+- p moves: l → l_prev → l_prev->prev → ... → head
+- At each point, p is a node in the original dllseg
+- The "ahead" nodes (l → ... → 0) are in a dlistrep
+- The "behind" nodes (head → ... → p) are in a dllseg
+
+At pre_loop: p = l. 
+- Behind: head → ... → l_prev → l (excl) = dllseg(head, 0, l_prev, l)
+- Ahead: l → ... → 0 = dlistrep(l, l_prev)
+
+At iter_2: p = l_prev.
+- Behind: head → ... → l_prev (excl) = dllseg(head, 0, l_prev->prev, l_prev)  
+- Ahead: l → ... → 0 ??? Wait, the ahead part should still be anchored at l since p is moving backward.
+
+Actually, let me reconsider. When p = l_prev, the nodes we've "passed through" going backward are: l (one node). The node l is now unfoleded between the behind and ahead segments. The ahead segment is from l to the end. The behind segment is from head to l_prev.
+
+So:
+- Behind: dllseg(head, 0, l_prev->prev, l_prev) — from head to l_prev (excl)
+- Ahead: dlistrep(l, l_prev) — from l to end, with prev = l_prev (since l->prev = l_prev)
+
+But wait, the RP shows dlistrep(y_290, l) in iter_2, not dlistrep(l, l_prev). This is because l was unfolded: dlistrep(l, l_prev) → data_at(l->next, y_290) * data_at(l->prev, l_prev) * dlistrep(y_290, l). The dlistrep shifted from l to l->next.
+
+Hmm, so the ahead segment is really anchored at l's successor, not l itself. This makes sense — once we move past l (p = l_prev), l is no longer part of the "current" segment. The dlistrep now describes the rest of the list starting from l->next.
+
+But for the invariant, l is a constant (the initial starting point). The invariant needs to capture both states:
+- pre_loop (p=l): dllseg(head, 0, l_prev, l) + dlistrep(l, l_prev) → interpreted as behind + ahead
+- iter_2 (p=l_prev): dllseg(head, 0, y_295, l_prev) + dlistrep(y_290, l) → behind + ahead
+
+Both states have the form: dllseg(..., p) + dlistrep(..., ...) where the dllseg ends at p.
+
+For pre_loop: dllseg(head, 0, p->prev, p) matches dllseg(head, 0, l_prev, l). ✓
+For iter_2: dllseg(head, 0, p->prev, p) matches dllseg(head, 0, y_295, l_prev). ✓ (p->prev = l_prev->prev = y_295)
+
+For the dlistrep:
+- pre_loop: dlistrep should be anchored at l. But p = l, so dlistrep(l, ...) = dlistrep(p, ...). The prev pointer of l is l_prev = p->prev.
+- iter_2: dlistrep is (y_290, l). But wait, p = l_prev now. l_prev != l. The dlistrep is anchored at y_290 = l->next, not at l or at l_prev.
+  - l_prev->next = l. So l_prev->next != y_290.
+
+Hmm, the dlistrep anchor doesn't follow p. It's always at l->next (y_290) once l is unfolded. But before l is unfolded, it's at l.
+
+This suggests the dlistrep anchor is NOT simply expressed as a function of p. It depends on l, which is a parameter.
+
+What if the invariant uses l directly?
+
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(l, p->next)
+```
+
+At pre_loop (p = l): dllseg(head, 0, l->prev, l) * dlistrep(l, l->next).
+This needs to match the precondition: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev).
+But dlistrep(l, l->next) vs dlistrep(l, l_prev): prev pointers differ! l->next != l_prev.
+So this doesn't work.
+
+What about:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+This is what I tried. Let me check the dllseg for iter_2: dllseg(head, 0, l_prev->prev, l_prev) should match the RP. In the RP, the dllseg is still `(head, 0, l_prev, l)` in iter_2, not `(head, 0, y_295, l_prev)`. 
+
+Wait! In RP_iter_2, the dllseg IS `dllseg_shape(head@pre, 0, l_prev, l@pre)`. So it's `dllseg(head, 0, l_prev, l)`, NOT `dllseg(head, 0, p->prev, p) = dllseg(head, 0, l_prev->prev, l_prev)`.
+
+This is because in iter_2, the dllseg hasn't been unfolded yet at l_prev. The p value has been updated (p = l_prev), but the dllseg still contains l_prev folded inside.
+
+So my invariant `dllseg(head, 0, p->prev, p)` with p = l_prev would be `dllseg(head, 0, l_prev->prev, l_prev)`. But the RP has `dllseg(head, 0, l_prev, l)` with p = l_prev. These don't match!
+
+This is the core issue. The dllseg in the invariant is "ahead" of what the RP shows. The RP's dllseg covers head to l (exclusive), but my invariant's dllseg covers head to l_prev (exclusive). These describe different segments!
+
+So the invariant expresses a stronger condition than what the RP captures. The RP captures the raw state before unfolding, while the invariant expresses the state AFTER unfolding has processed the previous iteration's effects.
+
+In QCP, the invariant is evaluated in the current program state. For the invariant to be consistent at each RP:
+- At RP_pre_loop (p = l): dllseg(head, 0, l->prev, l) = dllseg(head, 0, l_prev, l). This should match the precondition.
+- At RP_iter_2 (p = l_prev): dllseg(head, 0, l_prev->prev, l_prev) = dllseg(head, 0, y_295, l_prev). This requires unfolding the dllseg at l_prev to expose y_295.
+
+For the invariant to be evaluated at RP_iter_2, QCP needs to establish dllseg(head, 0, y_295, l_prev) from the state that has dllseg(head, 0, l_prev, l). This is a contraction of the dllseg from the right, which requires a strategy rule.
+
+The SKILL.md says "strategies must contract dllseg from the right, a rule that does not exist." This means there's NO strategy rule to fold dllseg from the right side. So the invariant dllseg(head, 0, p->prev, p) with exists variables can't be verified at iter_2 where the dllseg is dllseg(head, 0, l_prev, l).
+
+But the FIELD EXPRESSION approach avoids this! Why? Because "QCP compares the results directly." The field expressions in the invariant are evaluated independently, and QCP compares the results token-by-token. It doesn't need strategy rules to contract dllseg.
+
+So the field expression approach should work. But I'm getting 3 Admitted. Let me think about what else might be wrong...
+
+Actually, maybe the issue is that QCP can't evaluate p->prev at all because there's no data_at for p->prev in the program state at the RP. For the field expression to evaluate, there needs to be a data_at for the field. If the dllseg is folded, p->prev is not exposed as a separate data_at.
+
+Hmm, but if the dllseg is `dllseg(head, 0, l_prev, l)` and the invariant needs to evaluate `p->prev` where p = l, then QCP needs `data_at(&(l->prev), ...)`. This would come from the dlistrep_shape(l, l_prev) — when dlistrep is "unfolded" symbolically, it provides data_at for l->prev and l->next.
+
+But wait, during invariant checking, are predicates automatically unfolded? Not necessarily. The strategies unfold predicates based on rules, and each rule has specific conditions.
+
+Let me try a completely different approach. What if I use the same approach as the forward traversal example but adapted for backward:
+
+```c
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+From SKILL.md, this gives 1 Admitted (preservation fails). Then I can try to fix preservation using field expressions:
+
+```c
+/*@ Inv Assert
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p, p->prev)
+ */
+```
+
+Partial field expression (only on p->prev, not on p->next). Let me check if this reduces to 1 Admitted.
+
+Actually, let me just try a few variations incrementally. Let me start with the 1-Admitted version and work from there.
+
+[TEXT]
+Let me read the proof manual file to understand the witness structures better.
+
+[TOOL: Bash]
+Bash: grep -E "(entail_wit|return_wit|Lemma|Proof|Definition)" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v | head -30
+
+============================================================
+[THINKING] (438 chars)
+============================================================
+3 witnesses: entail_wit_1 (entry), entail_wit_2 (preservation), return_wit_1 (exit). Let me try the exists-variable approach from SKILL.md, which is said to leave only 1 Admitted (entail_wit_2 / preservation). Let me try:
+
+```c
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+This should give 1 Admitted (preservation), confirming that entry and return work with this structure.
+
+[TEXT]
+Let me try the exists-variable approach, which SKILL.md says leaves just 1 Admitted (preservation). This will confirm whether entry and return work with this form.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)\n\t */', 'new_string': '     /*
+
+============================================================
+[THINKING] (34 chars)
+============================================================
+Now let me run verification again.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (4989 chars)
+============================================================
+This is very informative! I can see the symexec output. Let me analyze:
+
+1. The symexec itself encounters a `fatal error: Cannot derive the precondition of Memory Read` for `p = (p->prev);` at line 20.
+
+2. Looking at the invariant state after QCP processes it:
+```
+exists head_290_value p_prev_291 p_292_value ,
+p_284_addr head_272_addr ,
+( &p == p_284_addr ) && 
+( &head == head_272_addr ) && 
+(p_292_value != head_290_value) && 
+data_at ( p_284_addr , struct list* , p_292_value ) * 
+data_at ( head_272_addr , struct list* , head_290_value ) * 
+dllseg_shape (head_290_value,  0 , p_prev_291, p_292_value) * 
+dlistrep_shape (p_292_value, p_prev_291)
+```
+
+The goal that fails is:
+```
+Left side (precondition): the invariant state above
+Right side: data_at ( &(p_292_value->prev) , struct list* , v )
+```
+
+QCP needs to read `p->prev` for `p = p->prev;`. It needs a `data_at` for `p->prev`. But the invariant has:
+- `dllseg_shape(head_290_value, 0, p_prev_291, p_292_value)` — the last node is p_prev_291, and p_292_value is the endpoint (NOT in the segment)
+- `dlistrep_shape(p_292_value, p_prev_291)` — the list starts at p_292_value with prev = p_prev_291
+
+To read `p->prev` (i.e., `p_292_value->prev`), QCP needs to unfold `dlistrep_shape(p_292_value, p_prev_291)`. The definition of dlistrep is:
+`dlistrep_shape(l, p) = (l == 0 && emp) || exists t, data_at(field_addr(l, next), struct list*, t) * data_at(field_addr(l, prev), struct list*, p) * dlistrep_shape(t, l)`
+
+So unfolding dlistrep_shape at p_292_value would produce `data_at(&(p_292_value->prev), struct list*, p_prev_291)`. This matches!
+
+But the strategies fail to produce this. The symexec log says:
+```
+After applying strategies:
+[Same state on both sides]
+```
+
+The strategies couldn't transform the left state to expose `data_at(&(p_292_value->prev), ...)`. 
+
+The issue is that the dlistrep needs to be unfolded at p_292_value. Rule 3 or 5 of dll_nodata might handle this. But I noticed in the first symexec log (the parsing of rules), there was no error about missing rules.
+
+Wait actually, let me look at the error message more carefully: `Sep cannot be fully solved. The Sep is: (null)`. This means the strategy couldn't solve the separation logic entailment. So there's a missing rule or the existing rules can't handle this case.
+
+The key issue is: `p` is the first argument of `dlistrep_shape(p, p_prev)`. The loop body tries to read `p->prev`. Strategies should unfold `dlistrep_shape` at `p` to expose `p->prev`. But they're failing to do so.
+
+Maybe the issue is that `p` is NOT the first argument! Let me look at the processed invariant again:
+
+```
+dllseg_shape (head_290_value,  0 , p_prev_291, p_292_value) * 
+dlistrep_shape (p_292_value, p_prev_291)
+```
+
+The first argument of `dlistrep_shape` is `p_292_value`, which is p's value. So p IS the first argument. Then why can't the strategy unfold it?
+
+Hmm, let me look at the strategy rules from the parsing log. Rules 1-16 exist. Let me think about which rule unfolds dlistrep:
+- Rule 5: dlistrep_shape(y, q) where prev and p are parameters → this might be dlistrep unfold (to data_at form)
+- Rule 6: dlistrep_shape(y, prev) where p is parameter
+
+The issue might be that the strategy needs the `p_292_value != 0` PROP constraint to fire the unfold rule. Looking at the RP analysis, the `l@pre != 0` constraint was used to unfold dlistrep at l in the unrolled version. But in the invariant state, there's no `p_292_value != 0` property.
+
+Wait, let me check: from the code path, `l != 0` (we took the else branch). And `p = l`. So `p != 0` at the start. But is `p != 0` preserved by the invariant? Let me check...
+
+Actually wait, the issue might be something else entirely. Let me re-read the error. The memory read is trying to read `p->prev`. The invariant has `dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. p is the first arg of dlistrep. So strategies should be able to unfold dlistrep at p.
+
+But the error says `Sep cannot be fully solved`. This means the strategies couldn't produce the needed data_at. 
+
+Let me look at this more carefully. Rule 5 parameters: y, q, prev, p. Rule 6: y, prev, p. 
+
+Maybe the issue is that p_292_value doesn't have a `!= 0` property. The dlistrep_shape definition has a base case for `l == 0`. Without proving `l != 0`, the strategy can't decide which case to unfold to.
+
+So I need to add `p != 0` to the PROP! This is strategy 5 from SKILL.md: "Add non-null PROP to trigger unfolds."
+
+Let me try:
+```
+/*@ Inv Assert exists p_prev,
+    p != 0 &&
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+Wait, but the fatal error happens during SYMEXEC, not in Coq. So the symexec itself fails before even generating proof files. The symexec error `Cannot derive the precondition of Memory Read` means QCP's own analysis can't prove the memory read is safe.
+
+Let me also check: does the symexec log end with "Successfully finished symbolic execution"? The output was cut off. Let me check.
+
+[TEXT]
+I can see a `fatal error: Cannot derive the precondition of Memory Read` during symexec. This is a memory read failure for `p->prev`. Let me check if symexec actually finished.
+
+[TOOL: Bash]
+Bash: tail -5 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (217 chars)
+============================================================
+Hmm, it seems like the symexec ended with an error. It didn't print "Successfully finished symbolic execution" and then something went wrong. Let me check for that specific message and any FATAL ERROR or other errors.
+
+[TOOL: Bash]
+Bash: grep -c "fatal error\|FATAL\|Successfully finished\|End of symbolic" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (37 chars)
+============================================================
+Only 1 match. Let me find what it is.
+
+[TOOL: Bash]
+Bash: grep "fatal error\|FATAL\|Successfully finished\|End of symbolic" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (757 chars)
+============================================================
+So symexec terminates with a fatal error before finishing. This is a Memory Read error at `p = p->prev`. The strategies can't unfold `dlistrep_shape(p_292_value, p_prev_291)` to get `data_at(&(p_292_value->prev), ...)`.
+
+Looking at the goal from the log:
+```
+Left: ... dlistrep_shape (p_292_value, p_prev_291)
+Right: data_at ( &(p_292_value->prev) , struct list* , v )
+```
+
+The strategies need to unfold `dlistrep_shape(p_292_value, p_prev_291)` to expose `data_at(&(p_292_value->prev), ...)`. But they fail.
+
+I think the issue is the missing non-null constraint. dlistrep_shape has a conditional base case: `(l == 0 && emp)`. Without knowing `p_292_value != 0`, strategies can't decide to unfold the non-empty case.
+
+Let me try adding `p != 0` to the PROP.
+
+[TEXT]
+The Memory Read fatal error means strategies can't unfold `dlistrep_shape` to expose `p->prev`. I need to add `p != 0` to trigger the unfold (Strategy 5 from SKILL.md).
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert exists p_prev,\n\t    dllseg_shape(head, 0, p_prev, p) *\n\t    dlistrep_shape(p, p_prev)\n\t 
+
+============================================================
+[THINKING] (34 chars)
+============================================================
+Now let me retry the verification.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (42 chars)
+============================================================
+Let me check the tail and grep for errors.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+[TOOL: Bash]
+Bash: grep -c "fatal error\|FATAL\|Successfully finished\|End of symbolic" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (56 chars)
+============================================================
+Symexec succeeded! Now let me check for Admitted proofs.
+
+[TEXT]
+Symexec passed! Now check for Admitted proofs.
+
+[TOOL: Bash]
+Bash: grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (8146 chars)
+============================================================
+Now we have 2 Admitted: entail_wit_1 (entry) and entail_wit_2 (preservation). Return witness is no longer Admitted! So the entry and preservation are the remaining issues.
+
+This matches the SKILL.md fix strategy 4: the exists-variable approach leaves `entail_wit_2` (preservation) as admitted. But here we also have `entail_wit_1` (entry) admitted.
+
+Wait, maybe the SKILL.md was referring to a slightly different configuration. Let me re-read:
+"Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted."
+
+So it should be 1 Admitted, but I have 2. The difference might be that in their example, PROP is different or the entry witness works. Let me check if the entry issue is related to the PROP `p != 0`.
+
+For entry: precondition + p = l must entail the invariant `exists p_prev, p != 0 && dllseg(head, 0, p_prev, p) * dlistrep(p, p_prev)`.
+
+From the precondition: `dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)` and `p = l`, `l != 0`.
+
+The invariant with p = l: `exists p_prev, l != 0 && dllseg(head, 0, p_prev, l) * dlistrep(l, p_prev)`.
+
+For this to match the precondition: p_prev = l_prev. Then: `dllseg(head, 0, l_prev, l)` matches. `dlistrep(l, l_prev)` matches. And `l != 0` matches the precondition's `l@pre != 0`.
+
+So the entry should work. Unless the issue is with PROP validation in the RP context. Each RP must satisfy the invariant. Let me check:
+- RP_pre_loop: p = l. `exists p_prev, p != 0 && dllseg(head, 0, p_prev, p) * dlistrep(p, p_prev)` → `exists p_prev, l != 0 && dllseg(head, 0, p_prev, l) * dlistrep(l, p_prev)` with p_prev = l_prev. ✓
+- RP_iter_2: p = l_prev. `exists p_prev, l_prev != 0 && dllseg(head, 0, p_prev, l_prev) * dlistrep(l_prev, p_prev)`. The RP has `dllseg(head@pre, 0, l_prev, l@pre)` and `dlistrep(y_290, l@pre)`. For the invariant to match: p_prev would need to be l_prev->prev (from dllseg). And dlistrep(l_prev, p_prev) → dlistrep(l_prev, l_prev->prev). But the RP has dlistrep(y_290, l). With p = l_prev, the invariant says dlistrep(l_prev, p_prev), which is dlistrep(l_prev, ???). The RP has dlistrep anchored at y_290 = l->next. These don't match.
+
+Wait, the invariant has `dlistrep_shape(p, p_prev)`. At iter_2, p = l_prev, so we need `dlistrep_shape(l_prev, p_prev)`. But the RP has dlistrep starting at y_290 (NOT l_prev). The dlistrep in the invariant is anchored at p, which changes with the iteration. But the RPs show dlistrep anchored at a fixed point (y_290 = l->next) after the first iteration.
+
+So the invariant `dlistrep_shape(p, p_prev)` with p = l_prev doesn't match the RP's `dlistrep_shape(y_290, l@pre)`. These are fundamentally different predicates. p != y_290 in iter_2 (p = l_prev, y_290 = l->next, and l_prev != l->next for a non-empty list).
+
+This is the root cause! The invariant `dlistrep_shape(p, p_prev)` with p changing doesn't correctly represent what stays the same across iterations. The dlistrep should be anchored at some invariant point.
+
+Let me reconsider. Looking at the loop:
+
+- Precondition: `dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)` — dllseg is [head, l), dlistrep is [l, end)
+- After p = l: same state
+- After p = l_prev: the node l is unfolded. dllseg is [head, l) (same), dlistrep is [l->next, end)
+
+The dllseg always covers [head, current_p) and the dlistrep covers [l->next, end).
+
+Wait no, at iter_2:
+- dllseg is (head, 0, l_prev, l) — this is [head, l), where l_prev is the last node
+- dlistrep is (y_290, l) — this is [l->next, end)
+- p = l_prev
+
+So the dllseg ends at l (exclusive), NOT at p. And p = l_prev is inside the dllseg.
+
+At iter_3:
+- dllseg is (head, 0, y_295, l_prev) — this is [head, l_prev), where y_295 is the last node
+- dlistrep is (y_290, l) — this is [l->next, end)
+- p = y_295
+
+Now the dllseg ends at l_prev (exclusive), and p = y_295 is inside this dllseg.
+
+So the dllseg always ends at the "original l's position" (which is the starting point of the traversal). And p moves backward through this segment. The dlistrep is always at l->next (past the starting point).
+
+Wait, that doesn't make sense for pre_loop. Let me re-examine.
+
+RP_pre_loop:
+- dllseg (head, 0, l_prev, l) — [head, l)
+- dlistrep (l, l_prev) — [l, end)
+- p = l
+
+Here, l is the endpoint of dllseg AND the starting point of dlistrep. And p = l.
+
+RP_iter_2:
+- dllseg (head, 0, l_prev, l) — [head, l) — same!
+- dlistrep (y_290, l) — [l->next, end) — shifted!
+- p = l_prev
+
+The dllseg hasn't changed! Only the dlistrep shifted from l to l->next. This is because the loop body unfolded dlistrep(l, l_prev) at l.
+
+RP_iter_3:
+- dllseg (head, 0, y_295, l_prev) — [head, l_prev) — shifted!
+- dlistrep (y_290, l) — [l->next, end) — same!
+- p = y_295
+
+Now the dllseg shifted! From ending at l to ending at l_prev. This is because the dllseg was unfolded at l_prev (where p was in iter_2).
+
+So the pattern is:
+- After iteration 1 (p = l → l_prev): dlistrep shifts from l to l->next (the old p gets unfolded from dlistrep)
+- After iteration 2 (p = l_prev → y_295): dllseg shifts from ending at l to ending at l_prev (the old p gets unfolded from dllseg)
+
+The dlistrep always anchors at l->next (after the first iteration). The dllseg always ends at the "original l" up to the point where p was in the previous iteration.
+
+Hmm, this is getting complicated. Let me think about it differently.
+
+The invariant should describe: at any point during the backward traversal, what does the heap look like?
+
+The full list from head is: head → n1 → n2 → ... → l_prev → l → n → ... → 0
+
+During backward traversal from l:
+- Initially p = l
+- Iter from l backward: p = l_prev, then p = l_prev->prev, etc.
+- Eventually p = head
+
+At any point with current cursor p:
+- Everything from l->next onward: dlistrep(l->next, l) — this is always anchored at l's next pointer, never changes
+- Everything from head to the current p: dllseg(head, 0, p->prev, p) — this shrinks as p moves left
+
+Wait, but at pre_loop (p = l):
+- dllseg(head, 0, l->prev, l) = dllseg(head, 0, l_prev, l) ✓
+- dlistrep(l->next, l) = dlistrep(y_290, l)
+
+But precondition gives: dlistrep(l, l_prev), not dlistrep(l->next, l).
+
+The difference: dlistrep(l, l_prev) includes node l, while dlistrep(l->next, l) starts from l->next. For the entry, we need to bridge this gap.
+
+Entry entailment: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev) |- dllseg(head, 0, l->prev, l) * dlistrep(l->next, l)
+
+Left side unfolds dlistrep(l, l_prev):
+= dllseg(head, 0, l_prev, l) * (data_at(l->next, y_290) * data_at(l->prev, l_prev) * dlistrep(y_290, l))
+= dllseg(head, 0, l_prev, l) * data_at(l->next, y_290) * data_at(l->prev, l_prev) * dlistrep(y_290, l)
+
+Right side:
+dllseg(head, 0, l->prev, l) * dlistrep(l->next, l)
+= dllseg(head, 0, l->prev, l) * dlistrep(y_290, l) (evaluating field expression l->next = y_290)
+
+But the left side has extra data_at(l->next, y_290) * data_at(l->prev, l_prev). The right side's dlistrep(l->next, l) would also create data_at(l->next, ???) implicit from the field expression. So there's a potential dup_data_at conflict.
+
+Hmm, this is exactly the issue. The field expression l->next in the invariant creates a redundant data_at. BUT the SKILL.md says this approach works because the field expressions are on DIFFERENT fields (p->prev vs p->next), avoiding dup_data_at.
+
+Wait, in the entry entailment:
+- dllseg uses p->prev (i.e., l->prev) — field expression for l->prev
+- dlistrep uses p->next (i.e., l->next) — field expression for l->next
+
+These are different fields! l->prev and l->next don't overlap. So no dup_data_at. ✓
+
+But the entailment still has extra data_at on the left side (from unfolding dlistrep(l, l_prev)). Strategies need to match the right side against a subset of the left side. This should be a valid entailment (excess resources on the left can be dropped).
+
+So why is entail_wit_1 admitted? Let me look at the actual witness content.
+
+Actually, let me go back to the full field-expression approach from SKILL.md strategy 4. With the `p != 0` PROP added, let me try:
+
+```
+/*@ Inv Assert p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+ */
+```
+
+The `p != 0` triggers dlistrep unfolding.
+
+[TEXT]
+Good progress -- 2 Admitted (entail_wit_1, entail_wit_2). Now let me apply SKILL.md strategy 4 (field expressions on both sides) with the `p != 0` PROP.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert exists p_prev,\n\t    p != 0 &&\n\t    dllseg_shape(head, 0, p_prev, p) *\n\t    dlistrep_shap
+
+============================================================
+[THINKING] (4895 chars)
+============================================================
+Wait, actually, I need to reconsider. The previous approach had `entail_wit_1` admitted with `p_prev`. The field expression approach should help with `entail_wit_2` (preservation). But `entail_wit_1` was also admitted.
+
+Let me think about `entail_wit_1` (entry). The precondition + p = l must entail the invariant.
+
+With field expression invariant: `p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)`
+With p = l: `l != 0 && dllseg_shape(head, 0, l->prev, l) * dlistrep_shape(l->next, l)`
+
+Precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)` and `l != 0` (from code path).
+
+dllseg(head, 0, l_prev, l) matches dllseg(head, 0, l->prev, l) since l->prev = l_prev. ✓
+
+dlistrep_shape(l, l_prev) vs dlistrep_shape(l->next, l):
+- Unfold left: data_at(l->next, y) * data_at(l->prev, l_prev) * dlistrep(y, l)
+- Right: dlistrep(l->next, l) = dlistrep(y, l) (with field expression l->next creating data_at(l->next, y))
+- But the left side also has data_at(l->next, y)! This is a potential dup_data_at.
+
+Hmm, but the left side has data_at(l->next, y) from unfolding, and the right side's field expression l->next would also create data_at(l->next, y). In theory, they should unify (same address, same value). But QCP might see this as distinct claims to the same field.
+
+Actually, the way QCP handles this is: the field expression `l->next` in the right side creates an implicit `data_at(&(l->next), ?)` where `?` is some fresh variable. Then QCP tries to match this against the left side's `data_at(&(l->next), y)`. If they unify, it's fine.
+
+But the key question is whether the strategies unfold dlistrep_shape(l, l_prev) during the entry entailment check. If not, then the left side has dlistrep(l, l_prev) (folded) and the right side has dlistrep(l->next, l) (folded with field expression). In this case, QCP would try to match dlistrep(l, l_prev) against dlistrep(l->next, l), and l != l->next (in general), so the match fails.
+
+So the issue is: strategies need to unfold dlistrep(l, l_prev) at l, but they don't do it automatically during the entry entailment. The strategies might unfold it only in certain conditions.
+
+Actually wait, there might be a key insight here: maybe the strategies don't handle field expressions in predicate arguments during the entry entailment. The field expression `p->next` (= `l->next`) creates an implicit data_at for the field. But the left side has a folded dlistrep, so there's no explicit data_at for l->next on the left.
+
+So the entry entailment fails because QCP can't evaluate l->next from the folded dlistrep on the left.
+
+If this is the case, I might need to use the field expression approach only for the SEP part but adjust the invariant to make entry work. 
+
+Actually, thinking more carefully: QCP evaluates the field expression by looking for data_at in the current state. If the current state (right before the invariant is applied) has dlistrep(l, l_prev) folded, QCP can't find data_at for l->next. But during the entry entailment check, QCP uses strategies to try to unfold the left side to match the right side.
+
+Hmm, but looking at the exists-variable approach, `entail_wit_1` was also admitted. So entry fails both with exists variables and with field expressions. This suggests the entry failure might be a more fundamental issue.
+
+Wait, with the exists-variable approach and `p != 0`, we had entail_wit_1 and entail_wit_2 admitted. Perhaps the entry failure is related to how the invariant interacts with the `p = l` assignment before it.
+
+Let me think about what the entry entailment looks like with the exists-variable approach:
+Precondition + p = l: `data_at(p, l) * dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)` with `l != 0`.
+Invariant: `exists p_prev, p != 0 && dllseg(head, 0, p_prev, p) * dlistrep(p, p_prev)`.
+
+With p = l: `exists p_prev, l != 0 && dllseg(head, 0, p_prev, l) * dlistrep(l, p_prev)`.
+Just instantiate p_prev = l_prev: `dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)`. This matches exactly.
+
+So why is entail_wit_1 admitted? Unless the strategies can't instantiate the exists variable correctly.
+
+Let me check the actual symexec log for the entry entailment. The log should show what happens during the invariant entry check. But the log is very long. Let me just grep for relevant parts.
+
+Actually, let me try a different approach. Let me look at the actual goal for entail_wit_1.
+
+Actually, maybe the issue is that entail_wit_1 is the "invariant holds at loop entry" check done by Coq, not by symexec. Symexec passed (no fatal error), which means symexec's own checks pass. The Coq-level proof has additional checks.
+
+But wait, with the exists-variable approach, symexec also had a fatal error before I added `p != 0`. After adding `p != 0`, symexec passed but Coq had 2 Admitted.
+
+Hmm, let me just try the field expression approach with p != 0 and see what happens.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (24 chars)
+============================================================
+Let me check the result.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log && echo "---" && grep -c "fatal error\|Successfully finished" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (38 chars)
+============================================================
+Symexec passed. Let me check Admitted.
+
+[TOOL: Bash]
+Bash: grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (6617 chars)
+============================================================
+With the field expression approach, we have only 1 Admitted: `entail_wit_1` (entry). This matches the SKILL.md description! The exists-variable approach had 2 Admitted (entail_wit_1 and entail_wit_2), but the field expression approach fixes entail_wit_2 (preservation).
+
+Now I need to fix the entry witness (entail_wit_1). Let me think about why the entry fails.
+
+The invariant: `p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)`
+At entry: p = l. So we need: `l != 0 && dllseg_shape(head, 0, l->prev, l) * dlistrep_shape(l->next, l)`
+
+The precondition: `dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)` with `l != 0` (from the code path through the else branch).
+
+For the dllseg: `dllseg_shape(head, 0, l_prev, l)` matches `dllseg_shape(head, 0, l->prev, l)` when l->prev = l_prev. But the precondition gives l_prev as a With variable. l->prev is a field expression that needs evaluation. To evaluate l->prev, we need data_at(&(l->prev), ...).
+
+Where can we get this data_at? From dlistrep_shape(l, l_prev)! When dlistrep_shape(l, l_prev) is unfolded, it produces `data_at(&(l->prev), l_prev)`.
+
+So the entry entailment requires:
+1. Unfold dlistrep_shape(l, l_prev) to expose data_at(&(l->prev), l_prev)
+2. Evaluate l->prev = l_prev from this data_at
+3. Match dllseg_shape(head, 0, l_prev, l) against dllseg_shape(head, 0, l->prev, l)
+
+But the strategies might not unfold dlistrep during the entry check for the dllseg match. The strategies work sequentially, and the order matters.
+
+Actually, looking at strategy 1 of SKILL.md: the forward traversal example `dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)` doesn't have field expressions. Maybe the issue is that field expressions in predicate arguments cause this problem.
+
+Strategy 2 from SKILL.md: "Check for redundant data_at: A field expression in SEP or PROP creates an implicit data_at for that field."
+
+So in my invariant, `p->prev` creates an implicit data_at for p->prev. And `p->next` creates an implicit data_at for p->next.
+
+On the entry side, the precondition has dlistrep_shape(l, l_prev). When this dlistrep is unfolded, it produces:
+- data_at(&(l->prev), l_prev)
+- data_at(&(l->next), y) (for some y)
+- dlistrep_shape(y, l)
+
+The field expression `l->prev` (from p->prev) creates data_at(&(l->prev), ...). These TWO data_at for l->prev create a dup_data_at at the Coq level (not caught by symexec).
+
+Similarly, `l->next` (from p->next) creates data_at(&(l->next), ...), which conflicts with data_at(&(l->next), y) from the dlistrep unfolding.
+
+This is a delayed dup_data_at! Strategy 2 says: "In symexec this may not trigger dup_data_at_error (the predicate is folded), but after Coq unfolding, all 4 witness types admit together."
+
+So the field expression approach should cause dup_data_at at the Coq level. But the SKILL.md says this approach works for backward traversal. Let me re-read strategy 4:
+
+"Field expressions on both sides also distribute ownership across two different fields (p->prev and p->next), one per predicate, avoiding dup_data_at."
+
+The key is "one per predicate." The dllseg uses p->prev, and the dlistrep uses p->next. These are DIFFERENT fields, so no dup_data_at between them.
+
+But the precondition provides BOTH l->prev and l->next through dlistrep_shape(l, l_prev). When verifying the entry, the precondition first provides these fields, and then the invariant has field expressions for the same fields.
+
+Actually, maybe the issue is different. Let me think about what the Coq proof does for entail_wit_1.
+
+In the Precondition, the state has:
+- dllseg_shape(head, 0, l_prev, l) — folded
+- dlistrep_shape(l, l_prev) — folded
+
+The invariant adds:
+- p != 0 (pure, with data_at(&p, l) → p = l, so l != 0)
+- dllseg_shape(head, 0, p->prev, p) — with field expression p->prev
+
+For the dllseg to match: p->prev = l->prev must equal l_prev. But to prove this, Coq needs to unfold dlistrep_shape(l, l_prev) to get data_at(&(l->prev), l_prev). The strategies should do this. Maybe the issue is that strategies don't unfold dlistrep_shape when the goal is to match dllseg_shape arguments.
+
+Hmm, let me think about this differently. Maybe I need to add an equality PROP that bridges the field expression with the With variable:
+
+`p->prev == l_prev` — but l_prev is a With variable, not a program variable. Hmm.
+
+Actually wait, maybe the issue is simpler. Let me look at how the forward traversal invariant works (SKILL.md example):
+
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(l, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+This doesn't have field expressions. For backward traversal, the SKILL.md suggests using field expressions to fix preservation. But entry is also a problem with field expressions.
+
+Maybe the solution is to use TWO invariants:
+1. For entry: use the exists-variable version
+2. For preservation: use field expressions
+
+But QCP only allows one invariant...
+
+Let me try another approach. What if I keep the field expression approach but add a PROP that bridges:
+
+```
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p->next, p)
+ */
+```
+
+What if I add `p->prev != 0` or some other PROP?
+
+Actually, let me think about what entail_wit_1 needs to prove:
+
+Precondition state (after p = l and skipping the if):
+```
+data_at(p, l) * data_at(head, head) * data_at(l, l) * dllseg_shape(head, 0, l_prev, l) * dlistrep_shape(l, l_prev)
+```
+
+(plus LOCAL bindings)
+
+Invariant state:
+```
+exists X Y Z, p != 0 && data_at(p, X) * data_at(head, Y) * dllseg_shape(Y, 0, Z, X) * dlistrep_shape(p->next, p)
+```
+Wait, QCP projects the invariant into actual assertions differently. Let me look at how QCP interprets the invariant from the symexec log.
+
+From the exists-variable approach's log:
+```
+Get Invariant: 
+exists p_prev_285 p_286_value head_287_value ,
+head_272_addr p_284_addr ,
+( &head == head_272_addr ) && 
+( &p == p_284_addr ) && 
+data_at ( p_284_addr , struct list* , p_286_value ) * 
+data_at ( head_272_addr , struct list* , head_287_value ) * 
+dllseg_shape (head_287_value,  0 , p_prev_285, p_286_value) * 
+dlistrep_shape (p_286_value, p_prev_285)
+```
+
+So QCP creates exists variables for the data_at bindings of head and p, and then uses those in the predicates:
+- `p_286_value` is p's current value
+- `head_287_value` is head's current value
+- `p_prev_285` is the exists variable from my invariant
+
+For the field expression approach, QCP would interpret:
+`dllseg_shape(head, 0, p->prev, p)` as... let me look at the log from the field expression run.
+
+Actually, I can search the log for "Get Invariant". Let me do that.
+
+[TEXT]
+Only 1 Admitted now: `entail_wit_1` (entry). This matches the SKILL.md fix strategy 4 exactly. Let me check how QCP interprets the invariant to diagnose the entry failure.
+
+[TOOL: Bash]
+Bash: grep -A15 "Get Invariant:" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log | head -20
+
+============================================================
+[THINKING] (2479 chars)
+============================================================
+Now I can see exactly how QCP interprets the field-expression invariant:
+
+```
+exists p_285_value p_value_prev_286 head_287_value p_value_next_288 ,
+head_272_addr p_284_addr ,
+( &head == head_272_addr ) && 
+( &p == p_284_addr ) && 
+(p_285_value !=  0 ) &&                              -- p != 0
+data_at ( p_284_addr , struct list* , p_285_value ) *  -- p's value binding
+data_at ( &(p_285_value->prev) , struct list* , p_value_prev_286 ) *  -- p->prev field expr
+data_at ( head_272_addr , struct list* , head_287_value ) *  -- head's value binding
+dllseg_shape (head_287_value,  0 , p_value_prev_286, p_285_value) *  -- dllseg with field exprs resolved
+data_at ( &(p_285_value->next) , struct list* , p_value_next_288 ) *  -- p->next field expr
+dlistrep_shape (p_value_next_288, p_285_value)  -- dlistrep with field expr resolved
+```
+
+So QCP creates explicit `data_at` for the field expressions! The invariant effectively becomes:
+- `data_at(p, p_val)` *
+- `data_at(&(p_val->prev), p_prev_val)` *
+- `data_at(head, head_val)` *
+- `dllseg_shape(head_val, 0, p_prev_val, p_val)` *
+- `data_at(&(p_val->next), p_next_val)` *
+- `dlistrep_shape(p_next_val, p_val)`
+
+Now, for the entry entailment (entail_wit_1), the precondition state needs to entail this.
+
+The precondition state (after `p = l`) is:
+```
+exists p_284_addr, l_275_addr, head_272_addr,
+data_at(p_284_addr, l) *
+data_at(head_272_addr, head) *
+data_at(l_275_addr, l) *
+dllseg_shape(head, 0, l_prev, l) *
+dlistrep_shape(l, l_prev)
+```
+
+To match the invariant, we need to instantiate:
+- `p_285_value` = l
+- `p_value_prev_286` = l_prev (from dlistrep unfolding: l->prev = l_prev)
+- `head_287_value` = head
+- `p_value_next_288` = l->next (from dlistrep unfolding)
+
+But to do this, the precondition's `dlistrep_shape(l, l_prev)` needs to be unfolded to expose:
+- `data_at(&(l->prev), l_prev)` → matches `data_at(&(p_val->prev), p_prev_val)`
+- `data_at(&(l->next), next_val)` → matches `data_at(&(p_val->next), p_next_val)`
+- `dlistrep_shape(next_val, l)` → matches `dlistrep_shape(p_next_val, p_val)`
+
+So the key issue is: does the strategy unfold dlistrep_shape(l, l_prev) during the entry check?
+
+Looking at the symexec log, after the invariant is applied, QCP does checks. By the time it reaches entail_wit_1 in Coq, strategies have been applied but apparently not enough to prove the entailment.
+
+Let me look at what happens during the invariant entry check in the symexec log. Let me search for the entry entailment attempt.
+
+[TOOL: Bash]
+Bash: grep -n "entail_wit\|Before while-loop\|After PSExec.*Inv\|Record witness\|begin witness\|entail_wit_1\|Check entry\|invariant.*entry\|entailment.*invariant" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log | head -30
+
+============================================================
+[THINKING] (73 chars)
+============================================================
+Let me check the proof_manual.v file to see the actual entail_wit_1 goal.
+
+[TOOL: Bash]
+Bash: head -150 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (140 chars)
+============================================================
+The proof_manual.v is just 25 lines with one Admitted. Let me look at the goal file to understand what `iter_back_entail_wit_1` actually is.
+
+[TOOL: Bash]
+Bash: head -100 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v
+
+============================================================
+[THINKING] (12836 chars)
+============================================================
+Now I can see the exact Coq goals. Let me analyze each:
+
+**entail_wit_1 (entry):**
+```
+Left:  [| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+Right: EX (p_next: Z) (p_prev: Z), [| (l_pre <> 0) |] && data_at(&(l_pre->prev), p_prev) ** dllseg_shape(head_pre, 0, p_prev, l_pre) ** data_at(&(l_pre->next), p_next) ** dlistrep_shape(p_next, l_pre)
+```
+
+The left side has `dlistrep_shape(l_pre, l_prev)` (folded). The right side has `data_at(&(l_pre->prev), p_prev) * data_at(&(l_pre->next), p_next) * dlistrep_shape(p_next, l_pre)`.
+
+To prove this, the strategy needs to unfold `dlistrep_shape(l_pre, l_prev)` at l_pre to produce:
+- `data_at(&(l_pre->prev), l_prev)` → instantiate p_prev = l_prev
+- `data_at(&(l_pre->next), p_next_val)` → instantiate p_next = p_next_val
+- `dlistrep_shape(p_next_val, l_pre)` → matches dlistrep_shape(p_next, l_pre)
+
+The strategy should unfold dlistrep_shape. Let me check if rule 5 or 6 handles this. Rule 5 handles `dlistrep_shape(y, q)` unfolding. But the issue is: does the strategy TRY to unfold dlistrep_shape during the entry entailment?
+
+Looking at the strategy parsing, rules include:
+- Rule 1: basic dlistrep match 
+- Rule 3: dlistrep with prev (x, p)
+- Rule 5: dlistrep unfold (y, q, prev, p)
+- Rule 6: dlistrep (y, prev, p)
+
+Wait, maybe the strategy doesn't try to unfold dlistrep because the right side has field expressions that create their own data_at. The strategy might stop because it sees `data_at(&(l_pre->prev), p_prev)` on the right, which should come from somewhere. The left side has only a folded dlistrep. The strategy might not know to unfold the dlistrep to produce this data_at.
+
+Hmm, but the strategies for the forward-traversal case work without field expressions. The issue is specifically with field expressions creating data_at that conflict with or duplicate what would come from dlistrep unfolding.
+
+Let me check: the forward traversal invariant `dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)` has no field expressions. The corresponding entry entailment would be:
+```
+Left: dllseg_shape(l, 0, p_prev_init, l) * dlistrep_shape(l, p_prev_init)
+Right: EX p_prev, dllseg_shape(l, 0, p_prev, l) * dlistrep_shape(l, p_prev)
+```
+Just instantiate p_prev = p_prev_init. This works because there are no field expressions creating extra data_at.
+
+For the backward traversal, the entry entailment with field expressions requires unfolding dlistrep to expose the fields. The strategy should do this, but maybe there's a rule missing or the strategy doesn't try because of the field expressions.
+
+What if I try adding PROP equalities to bridge the field expressions?
+
+Actually, let me look at the strategy rules more carefully. From the symexec log's strategy parsing:
+
+Rule 5 (dll_nodata, 5):
+Current type environment: y -> Z, q -> Z, prev -> Z, p -> Z
+This has 4 parameters: y, q, prev, p. Looking at dlistrep_shape definition: `dlistrep_shape(l, p)` — the unfold would produce exists t, data_at(l->next, t) * data_at(l->prev, p) * dlistrep_shape(t, l).
+
+So rule 5 with params y, q, prev, p:
+- y = l (the list head)
+- q = l->next (new variable)
+- prev = p (the prev pointer)
+- p = ? 
+
+Rule 6 (dll_nodata, 6):
+y -> Z, prev -> Z, p -> Z
+3 params: y = ?, prev = ?, p = ?
+
+Hmm, I can't read the strategies file directly. Let me think about what approach to take.
+
+The issue is that the field expressions `p->prev` and `p->next` create `data_at` entries in the invariant. For the entry, the precondition's `dlistrep_shape(l, l_prev)` needs to be unfolded to produce matching data_at entries. But the strategies don't seem to do this.
+
+One possible approach: REDUCE the field expressions. Instead of using `p->prev` and `p->next` as explicit field expressions, use them only where necessary. 
+
+Looking at the SKILL.md strategy 4 example more carefully:
+
+"Example: A DLL backward traversal loop (p = p->prev). Invariant dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev) with an exists variable p_prev leaves 1 Admitted — after p changes, p_prev is a fixed symbol; strategies must contract dllseg from the right, a rule that does not exist. Fix: dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)"
+
+Note: it only replaces `p_prev` with field expressions. But the field expressions are in BOTH predicates. The idea is to avoid using an exists variable that stays fixed when p changes. But the field expressions create extra data_at that cause entry issues.
+
+Maybe I can use a MIXED approach: keep p_prev as an exists variable for the dllseg, and use a field expression for the dlistrep:
+
+```
+exists p_prev,
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p->next, p)
+```
+
+Wait, that would still have a field expression in dlistrep's first argument, causing the entry issue.
+
+Or what about:
+```
+exists p_prev,
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p, p_prev)
+```
+
+This only has one field expression (p->prev in dllseg). Let me check: for the entry with p=l:
+- dllseg(head, 0, l->prev, l) — needs data_at for l->prev (from dlistrep unfolding)
+- dlistrep(l, p_prev) — standard, p_prev = l_prev
+
+And for preservation (p' = p->prev):
+- dllseg(head, 0, p'->prev, p') = dllseg(head, 0, (p->prev)->prev, p->prev) — field expression adapts
+- dlistrep(p, p_prev) with p' = p->prev — this is dlistrep(p'->next, p') since p = p'->next for a DLL
+
+Hmm wait, after p' = p->prev, we need dlistrep(p, p_prev) to become dlistrep(p'->next, p'). This would be the same as the field expression approach for dlistrep. So the single field expression approach might also not work for preservation.
+
+Let me try yet another idea. What if I use the SKILL.md strategy 1: put the dereferenced variable at arg[0] of a shape predicate.
+
+p is dereferenced (p->prev is read). Currently, p is arg[3] of dllseg and arg[1] of dlistrep. What if I restructure so that p is arg[0] of dlistrep?
+
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p, p->next)
+```
+
+Wait, dlistrep_shape(p, p->next) means the prev pointer of the first node is p->next. That doesn't make sense for a DLL where p->prev should be the prev pointer.
+
+Actually, the existing invariant already has p as arg[0] of dlistrep: `dlistrep_shape(p, p_prev)` in the exists-variable version.
+
+Hmm, the exists-variable version failed preservation (entail_wit_2) because p_prev stays fixed when p changes. The field expression version fixes preservation but breaks entry.
+
+What if I use a mixed approach:
+- For the dllseg boundary: use exists variable (works for entry)
+- For the dlistrep: use field expression for the prev pointer
+
+```
+/*@ Inv Assert exists p_prev,
+    p != 0 &&
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p->next, p)
+ */
+```
+
+Wait, the dlistrep here uses p->next (first arg is a field expr) and p (second arg is a program var). This is the same problematic field expression. Let me check the Coq goal in the goal file:
+
+```
+entail_wit_1:
+Left: dllseg_shape head_pre 0 l_prev l_pre ** dlistrep_shape l_pre l_prev
+Right: EX p_prev, dllseg_shape head_pre 0 p_prev l_pre ** data_at(l_pre->prev, l_prev) ** dlistrep_shape l_pre->next l_pre
+```
+
+Wait, this is slightly different from what I was thinking. Let me look at the actual entail_wit_1 from the output. The QCP creates data_at for field expressions separately from the predicates.
+
+Looking at the goal file output again:
+```
+entail_wit_1:
+Left: [| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+Right: EX (p_next: Z) (p_prev: Z), [| (l_pre <> 0) |] && data_at(&(l_pre->prev), p_prev) ** dllseg_shape(head_pre, 0, p_prev, l_pre) ** data_at(&(l_pre->next), p_next) ** dlistrep_shape(p_next, l_pre)
+```
+
+The left side has: dllseg_shape + dlistrep_shape (folded)
+The right side has: data_at(l_pre->prev, ...) * dllseg_shape(...) * data_at(l_pre->next, ...) * dlistrep_shape(p_next, l_pre)
+
+For the entailment:
+1. Unfold dlistrep_shape(l_pre, l_prev) from the left
+2. This produces: data_at(l_pre->next, t) * data_at(l_pre->prev, l_prev) * dlistrep_shape(t, l_pre)
+3. Now instantiate p_prev = l_prev, p_next = t
+4. Right side becomes: data_at(l_pre->prev, l_prev) * dllseg_shape(head_pre, 0, l_prev, l_pre) * data_at(l_pre->next, t) * dlistrep_shape(t, l_pre)
+5. This matches the unfolded left side exactly!
+
+So the entailment should work if the strategy unfolds dlistrep_shape. The question is: why doesn't the strategy do this?
+
+Let me check if there's a strategy rule (maybe rule 5) that unfolds dlistrep_shape from the left side. Looking at the strategy description:
+
+Rule 5 (dll_nodata, 5): y -> Z, q -> Z, prev -> Z, p -> Z
+Rule 6 (dll_nodata, 6): y -> Z, prev -> Z, p -> Z
+
+Maybe rule 5 unfolds dlistrep_shape(y, q) where q is the next node. But it has 4 parameters including p, which might be extra context.
+
+Hmm, I wonder if the strategy rules are conditioned on specific patterns. For example, rule 5 might only fire when the right side of the entailment has certain patterns.
+
+Actually, looking at the symexec log more carefully, I noticed that in the log, strategies are applied and the result is shown as "After applying strategies". For the entry entailment, the strategies result is the SAME as the input — meaning no rule fired!
+
+This confirms that the strategy doesn't have a rule to handle this case. The issue is that the right side has field expressions (data_at for l_pre->prev and l_pre->next), and the strategies don't know to unfold dlistrep on the left to match them.
+
+I think the problem is a limitation of the strategy rules, not of my invariant. The SKILL.md says this approach works, but apparently the strategy rules in this version don't support this specific case.
+
+Let me try a different approach. What if I don't use any field expressions in the invariant, but add a has_permission or a different structure?
+
+Actually, wait. Let me re-read the SKILL.md strategy 4:
+
+"The invariant before and after are independently computed from the same expressions; QCP compares the results directly."
+
+This suggests that field expressions are evaluated in the state, and QCP compares the two states directly, without strategy unfolding. Maybe the issue is that the "independent computation" doesn't work for the entry—the precondition's dlistrep_shape(l, l_prev) needs to be unfolded to evaluate l->prev and l->next, and this unfolding is done by strategies.
+
+So the field expression approach works for preservation (where both sides use the same invariant form) but NOT for entry (where the left side is the precondition, which has a different form).
+
+The SKILL.md might assume that another mechanism handles the entry. Let me check: does the SKILL.md say anything about how to handle the entry with field expressions?
+
+Looking at the SKILL.md fix strategies:
+
+1. Put the dereferenced variable at arg[0]
+2. Check for redundant data_at
+3. Carry frame items with PROP equalities
+4. Widen the boundary with field expressions
+5. Add non-null PROP
+6. Add has_permission
+
+Strategy 2 mentions: "In symexec this may not trigger dup_data_at_error (the predicate is folded), but after Coq unfolding, all 4 witness types admit together."
+
+This describes a scenario where field expressions cause issues after Coq unfolding. The fix is to remove the redundant field expression.
+
+For the entry entailment, the field expressions `p->prev` and `p->next` create data_at for l->prev and l->next. The precondition provides these through dlistrep_shape(l, l_prev). The Coq proof can't match them up.
+
+Maybe I need a different invariant structure entirely. Let me think about what would work for BOTH entry and preservation.
+
+What if I use NO field expressions and add specific PROP constraints + has_permission?
+
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+With the p != 0 PROP, this had entail_wit_1 and entail_wit_2 admitted. What if I add has_permission(&p)?
+
+Hmm, but p is already arg[0] of dlistrep_shape, so it shouldn't need has_permission.
+
+Actually, wait. Let me re-examine. With the exists-variable approach and p != 0 PROP:
+- entail_wit_1 admitted (entry)
+- entail_wit_2 admitted (preservation)
+
+The entry issue: maybe the PROP `p != 0` is problematic for entry because the left side also has `l_pre != 0`, and the exists variable instantiation can't handle it.
+
+Wait, actually, let me look at the goal file for the exists-variable approach. But I overwrote it. Let me go back to the exists-variable version and check the goal.
+
+Hmm, maybe the issue with the exists-variable approach is different from what I thought. Let me just try it without PROP:
+```
+/*@ Inv Assert exists p_prev,
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+And see if symexec still has the Memory Read error.
+
+[TEXT]
+Let me look at the Coq goal more carefully. The issue is that field expressions create explicit `data_at` for `p->prev` and `p->next`, and the entry entailment can't unfold `dlistrep_shape` on the left to match them. Let me try approach: use the exists-variable form for the dllseg boundary but use a field expression only on the side that makes preservation work.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert p != 0 &&\n\t    dllseg_shape(head, 0, p->prev, p) *\n\t    dlistrep_shape(p->next, p)\n\t */'
+
+============================================================
+[THINKING] (7734 chars)
+============================================================
+Wait, this hybrid approach mixes exists variable (p_prev for dllseg) with field expression (p->next for dlistrep). Let me check if it handles both entry and preservation:
+
+Entry (p = l):
+Invariant: exists p_prev, l != 0 && dllseg(head, 0, p_prev, l) * dlistrep(l->next, l)
+Precondition: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev)
+- dllseg matches with p_prev = l_prev ✓
+- dlistrep: need dlistrep(l, l_prev) |- dlistrep(l->next, l). As before, requires unfolding dlistrep at l. Issue!
+
+Hmm, the dlistrep field expression is still there. So the entry issue persists.
+
+Also, preservation: after p' = p->prev:
+Before: exists p_prev, dllseg(head, 0, p_prev, p) * dlistrep(p->next, p)
+After: exists p_prev', dllseg(head, 0, p_prev', p') * dlistrep(p'->next, p') where p' = p->prev
+
+For p'->next: this is p->prev->next = p (for a DLL). So dlistrep(p, p'). For dllseg(head, 0, p_prev', p'), we need p_prev' = p'->prev = p->prev->prev. This is different from the old p_prev.
+
+So preservation still fails because p_prev doesn't adapt. The hybrid approach is worse than both pure approaches!
+
+Let me try the pure exists-variable approach but with the invariant adjusted to handle both entry and preservation.
+
+Actually, let me go back to the pure field-expression approach and try to fix entry differently. 
+
+Looking at the entry entailment goal:
+```
+Left: dlistrep_shape(l_pre, l_prev) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** ...
+Right: EX p_next p_prev, data_at(l_pre->prev, p_prev) ** dllseg_shape(head_pre, 0, p_prev, l_pre) ** data_at(l_pre->next, p_next) ** dlistrep_shape(p_next, l_pre) ** ...
+```
+
+The strategy needs to: (1) unfold dlistrep on the left, (2) match the resulting data_at with the right side's field-expression data_at.
+
+Maybe strategy rule 3 or 5 handles this. Let me check if there's a diagnostic tool I can use...
+
+Actually, let me try a completely different approach. What if the invariant explicitly includes the unfolded form:
+
+```
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    data_at(field_addr(p, next), struct list*, p->next) *
+    data_at(field_addr(p, prev), struct list*, p->prev) *
+    dlistrep_shape(p->next, p)
+ */
+```
+
+But this is basically what the field expression approach already does (QCP creates data_at for the field expressions anyway).
+
+Hmm, let me re-read the SKILL.md fix strategy 3: "Carry frame items with PROP equalities."
+
+"Check whether the pre-loop state has stack bindings or With-clause relationships that were dropped by Inv Assert replacement. Use equalities in PROP to carry them."
+
+For the entry: `param == param@pre` or `*param == <with_var>`.
+
+The precondition uses `l_prev` as a With variable: `dllseg_shape(head, 0, l_prev, l)`. In the invariant, this becomes `dllseg_shape(head, 0, p->prev, p)`. So we'd need `l_prev == p->prev` (at entry, p = l, so l_prev == l->prev).
+
+But after the invariant, l_prev is a With-clause variable that's not accessible as a program variable. And `p->prev` is a field expression that creates a data_at.
+
+Strategy 3 says to use equalities like `*param == <with_var>` or `p_prev == l_prev` (if p_prev were an exists variable). But with field expressions, the equality would be `p->prev == l_prev`, which has the field expression problem.
+
+I think the fundamental issue is that field expressions create extra data_at that strategies can't match against folded predicates during entry.
+
+Let me try yet another approach. What if I keep the exists-variable approach and add has_permission?
+
+No, has_permission doesn't help with entry or preservation for shape predicates.
+
+OK, let me try the most basic approach: use the exists-variable invariant without any field expressions, and see what happens with `p != 0`:
+
+```
+/*@ Inv Assert exists p_prev,
+    p != 0 &&
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+Results: 2 admitted (entail_wit_1 and entail_wit_2).
+
+Now, to fix entail_wit_1 with this approach, what can I add? According to strategy 5, add non-null PROP (already done). According to strategy 6, add has_permission (p is arg[0] of dlistrep, so not needed).
+
+For entail_wit_2 (preservation), the SKILL.md says to use field expressions (strategy 4).
+
+So the challenge is to satisfy both entry and preservation.
+
+Actually, let me try another idea. What if I use the full field-expression approach but add the l_prev With-variable equality as a PROP? Like:
+
+```
+/*@ Inv Assert p != 0 && l_prev == p->prev &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p->next, p)
+ */
+```
+
+But l_prev is a With-clause variable, not accessible in the function body. It's only used in the precondition.
+
+Wait, can I even reference l_prev in the invariant? Let me check... With-clause variables are used in the Requires/Ensures. The invariant might not have access to them.
+
+Actually, in the example from the SKILL.md, the forward traversal invariant doesn't reference the With variable at all. So I probably can't use l_prev in the invariant.
+
+Let me think about this from a completely different angle. What if the invariant is simply:
+
+```
+/*@ Inv Assert dlistrep_shape(p, 0) * dllseg_shape(head, 0, p->prev, 0)
+ */
+```
+
+No, that doesn't make sense.
+
+Actually, let me reconsider. Looking at the forward traversal example:
+```
+dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+This works for BOTH entry and preservation. Entry works because p = l initially, and the invariant instantiates to the precondition. Preservation works because p changes but p_prev is the "previous p value" which is a fixed symbol — the invariant after doesn't depend on the old p_prev, only on the NEW p_prev which is the old p.
+
+Wait, that's the key! For forward traversal, `p = p->next`:
+- Old state: dllseg(l, 0, p_prev, p) * dlistrep(p, p_prev) with p = some_node
+- After p' = p->next: new state needs dllseg(l, 0, p_prev', p') * dlistrep(p', p_prev') 
+- But p_prev' = p (old value of p), and the old state has dlistrep(p, p_prev) which includes node p
+- Strategies unfold dlistrep(p, p_prev) to get data_at(p->next, p') and re-fold into dllseg
+
+For backward traversal `p = p->prev`, the situation is reversed:
+- Old state: dllseg(head, 0, p_prev, p) * dlistrep(p, p_prev) with p = some_node
+- After p' = p->prev: new state needs dllseg(head, 0, p_prev', p') * dlistrep(p', p_prev')
+- But p was at the RIGHT END of dllseg. After p' = p->prev, we need to contract dllseg from the RIGHT (not unfold from the left)
+- Strategy rule for contracting dllseg from the right doesn't exist!
+
+That's exactly what SKILL.md says. The field expression approach avoids this by not needing the contraction rule.
+
+OK, let me try one more thing. What about:
+```
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p, p->prev)
+ */
+```
+
+This is a hybrid: field expression for p->prev in dllseg (to handle dllseg contraction), and direct p/p_prev arguments in dlistrep (no field expressions there).
+
+In this case, QCP would create:
+- data_at(&(p->prev), p_prev_val) from the field expression in dllseg
+- But dlistrep_shape(p, p_prev) has no field expressions — p_prev is an exists variable
+
+For entry: dllseg(head, 0, l->prev, l) with data_at(l->prev, p_prev_val). From precondition: dllseg(head, 0, l_prev, l) * dlistrep(l, l_prev). Unfold dlistrep to get data_at(l->prev, l_prev). Match with p_prev_val = l_prev. The dlistrep after unfolding is dlistrep(l->next, l). For dlistrep(p, p_prev) = dlistrep(l, p_prev). If p_prev = l_prev (already set), then dlistrep(l, l_prev). After unfolding: data_at(l->prev, l_prev) and dlistrep(l->next, l). Hmm, still doesn't match.
+
+Actually, let me just try different combinations and see what works. The approach is trial and error now.
+
+[TEXT]
+Let me go back to a simpler approach. Let me try the exists-variable form with the `p != 0` PROP but look at the actual goal to understand why entry fails. Let me first re-test the exists-variable version.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert exists p_prev,\n\t    p != 0 &&\n\t    dllseg_shape(head, 0, p_prev, p) *\n\t    dlistrep_shap
+
+============================================================
+[THINKING] (66 chars)
+============================================================
+Let me re-verify this to see the exact Coq goals for this version.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (25 chars)
+============================================================
+Let me check the results.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log && echo "=== Admitted ===" && grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (149 chars)
+============================================================
+Same result: entail_wit_1 and entail_wit_2 admitted. Let me look at the goal file for the exists-variable approach to understand the exact Coq goals.
+
+[TOOL: Bash]
+Bash: grep -A20 "Definition iter_back_entail_wit_1" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v
+
+============================================================
+[THINKING] (2992 chars)
+============================================================
+Now I can see both goals clearly.
+
+**entail_wit_1:**
+```
+Left:  [| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+Right: EX (p_prev: Z), [| (l_pre <> 0) |] && dllseg_shape(head_pre, 0, p_prev, l_pre) ** dlistrep_shape(l_pre, p_prev)
+```
+
+This is straightforward: instantiate p_prev = l_prev. Then the right side is `dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)` which matches the left side exactly. There's no field expression here.
+
+But it's admitted! This is strange. Maybe the issue is that the strategy doesn't know how to instantiate exists variables?
+
+Actually wait, maybe the problem is different. Let me look at what's on the left side more carefully:
+
+```
+[| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+```
+
+And the right side:
+```
+EX (p_prev: Z), [| (l_pre <> 0) |] && dllseg_shape(head_pre, 0, p_prev, l_pre) ** dlistrep_shape(l_pre, p_prev)
+```
+
+The left side has `data_at(&l, l_pre)` but the right side doesn't. So the left has an extra data_at for l. This might be the issue! The invariant doesn't carry the `data_at(&l, l_pre)` for the l variable.
+
+But wait, l is a parameter that's used to initialize p. After `p = l`, l is no longer needed. However, the Inv Assert replaces the ENTIRE program state. If `data_at(&l, l_pre)` is not in the invariant, it gets dropped, and the left side would have an extra resource that the right side doesn't consume.
+
+In separation logic entailment, extra resources on the left side are fine — they just get "framed out." The entailment should still hold. Unless QCP's separation logic doesn't support framing out extra resources.
+
+Hmm, but the `data_at(&l, l_pre)` is a stack variable binding. QCP might handle these automatically. Let me check: in other examples, does the invariant carry all stack variable bindings?
+
+Looking at the forward traversal example: `dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. Here, `l` is used as arg[0] of dllseg. QCP creates `data_at(&l, l_val)` automatically. So l's binding is carried.
+
+In my backward traversal invariant: `dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. Here, `head` is arg[0] of dllseg. `p` is arg[3] of dllseg and arg[0] of dlistrep. `l` is NOT in any argument. So `l`'s data_at is dropped!
+
+Could this be the cause of entail_wit_1? The left side has `data_at(&l, l_pre)` which is an extra resource that gets framed out. But maybe QCP doesn't handle framing correctly for stack variables?
+
+Or maybe the issue is something else entirely. Let me look at the entail_wit_2 goal.
+
+**entail_wit_2:**
+```
+Left:  [| (p <> head) |] && [| (p <> 0) |] && data_at(&(p->prev), p_prev_2) ** dlistrep_shape(y, p) ** data_at(&(p->next), y) ** dllseg_shape(head, 0, p_prev_2, p)
+Right: (NOT SHOWN, need to see the full definition)
+```
+
+Wait, the grep output was cut off. Let me see the full entail_wit_2.
+
+[TOOL: Bash]
+Bash: grep -A40 "Definition iter_back_entail_wit_2" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v | head -50
+
+============================================================
+[THINKING] (13412 chars)
+============================================================
+Now I can see the full goals.
+
+**entail_wit_2 (preservation):**
+```
+Left:  [| (p <> head) |] && [| (p <> 0) |] && data_at(&(p->prev), p_prev_2) ** dlistrep_shape(y, p) ** data_at(&(p->next), y) ** dllseg_shape(head, 0, p_prev_2, p)
+Right: EX (p_prev: Z), [| (p_prev_2 <> 0) |] && dllseg_shape(head, 0, p_prev, p_prev_2) ** dlistrep_shape(p_prev_2, p_prev)
+```
+
+The left side is the UNFOLDED state after one iteration! It has:
+- data_at(&(p->prev), p_prev_2) — p->prev = p_prev_2
+- data_at(&(p->next), y) — p->next = y
+- dlistrep_shape(y, p) — rest of list from y
+- dllseg_shape(head, 0, p_prev_2, p) — segment from head to p
+
+The right side is the invariant with p replaced by p_prev_2 (the new p after p = p->prev):
+- dllseg_shape(head, 0, p_prev, p_prev_2) — need to match dllseg from head to new p
+- dlistrep_shape(p_prev_2, p_prev)
+
+The issue: the left side has dllseg up to p (old p), but the right side needs dllseg up to p_prev_2 (= old p->prev = new p). The dllseg on the left is wider!
+
+To prove this, strategies would need to CONTRACT the dllseg on the left from the right, removing the node at p. But there's no rule for this.
+
+The left side has `data_at(&(p->prev), p_prev_2)` (p->prev field) and `dllseg_shape(head, 0, p_prev_2, p)` (the full segment including p). To get to the right side, we need:
+1. "Contract" dllseg — remove p from the right end of the segment
+2. The result would be `dllseg_shape(head, 0, X, p_prev_2)` where X is p_prev_2->prev
+
+Actually, wait. Looking at the dllseg definition:
+`dllseg_shape(x, xp, yp, y) = (x == y && xp == yp && emp) || exists z, data_at(field_addr(x, next), struct list*, z) * data_at(field_addr(x, prev), struct list*, xp) * dllseg_shape(z, x, yp, y)`
+
+This expands from the LEFT (x). So dllseg(head, 0, p_prev_2, p) can't be contracted from the right (changing the endpoint p to p_prev_2). You'd need to fully unfold it and re-fold.
+
+But wait, the right side needs dllseg(head, 0, p_prev, p_prev_2). If p_prev = ???, this is the segment from head to p_prev_2 (exclusive). On the left, we have dllseg(head, 0, p_prev_2, p). We need to shrink this by one node (p) from the end. There's no strategy rule for this.
+
+This is exactly the SKILL.md's point about "contracting dllseg from the right — a rule that does not exist."
+
+OK so now I understand the two problems:
+1. **entail_wit_1 (entry)**: Extra stack bindings not in invariant? Or some other mismatch. The left has data_at(&l, l_pre) which is not in the right.
+2. **entail_wit_2 (preservation)**: Can't contract dllseg from the right.
+
+For entail_wit_2, the field expression approach solves it because the invariant evaluates p->prev independently each time, making the dllseg argument adaptive.
+
+For entail_wit_1, let me look more carefully:
+```
+Left:  data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+Right: EX p_prev, dllseg_shape(head_pre, 0, p_prev, l_pre) ** dlistrep_shape(l_pre, p_prev)
+```
+
+The left has data_at(&l, l_pre) which is NOT on the right. In separation logic, this is an extra resource that should be framed off. But maybe QCP doesn't automatically frame off stack variable data_at's.
+
+Actually, I think the issue might be that QCP doesn't frame off the l stack binding because it's needed for some reason. Or maybe the strategies don't handle exists variables instantiation for this case.
+
+Hmm, but the forward traversal's entail_wit_1 also has data_at for l, and that presumably works. Let me think...
+
+Actually, for the forward traversal, the invariant is:
+```
+dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+
+l is arg[0] of dllseg. So QCP creates data_at(&l, l_val) for it. This data_at IS in the invariant. The left side also has data_at(&l, l_pre) from the precondition. These match.
+
+In my backward traversal invariant:
+```
+dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)
+```
+
+head is arg[0] of dllseg (gets data_at). p is arg[3] (no data_at) and arg[0] (gets data_at). l is NOT in any predicate argument, so NO data_at is created for l.
+
+But the precondition state has data_at(&l, l_pre). This is an extra resource that needs to be framed off.
+
+Maybe the issue is QCP doesn't handle this framing. Let me try adding l to the invariant somehow.
+
+Wait, l is not used after the loop. It's only used to initialize p. So l doesn't need to be in the invariant. But QCP's entailment checker might not handle framing off stack variable data_at.
+
+Let me look at the forward traversal's goal to compare. But I don't have that. Let me just try adding l in some way to the invariant.
+
+Actually, maybe I can add `has_permission(&l)` — but l is not dereferenced in the loop body, so this would be unnecessary.
+
+Or I can try adding a `data_at` for l? But data_at in the invariant for a stack variable is tricky because its value changes (it's set to a specific value before the loop).
+
+Wait, actually, looking at the goal again: the left side has `data_at(&l, l_pre)` — this is the stack binding whose value is l_pre (the function parameter). The right side doesn't have it. If QCP can't frame it off, we get a mismatch.
+
+Let me check: does the goal file also have the data_at for head on the left side? It's not shown because head is in dllseg so it gets its own data_at. But wait, the goal excerpt I see is:
+
+```
+Left:  [| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)
+```
+
+Where's the data_at for head? It's not shown. Maybe it's been framed off by the strategies? Or the LOCAL bindings handle head?
+
+Actually, I think QCP converts program variables to stack addresses. The dllseg uses head_pre (the value of head), which implies there's already a data_at for head. Let me look at the invariant interpretation from the symexec log...
+
+Actually, let me look at the preamble of the goal. The left side of entail_wit_1 has:
+- data_at(&l, l_pre)
+- dllseg_shape(head_pre, 0, l_prev, l_pre)
+- dlistrep_shape(l_pre, l_prev)
+
+Note: there's NO explicit data_at for head. So either QCP handles head's binding automatically, or it's already been framed off.
+
+Hmm, let me think about this differently. Maybe the issue is not the extra data_at for l, but something else about the entry.
+
+Wait, actually, I just realized something. Let me re-read the entail_wit_1 and entail_wit_2:
+
+For entail_wit_1, the left side is the program state BEFORE the invariant is applied: `[| (l_pre <> 0) |] && data_at(&l, l_pre) ** dllseg_shape(head_pre, 0, l_prev, l_pre) ** dlistrep_shape(l_pre, l_prev)`.
+
+For entail_wit_2, the left side is the unfolded state AFTER one loop iteration: `[| (p <> head) |] && [| (p <> 0) |] && data_at(&(p->prev), p_prev_2) ** dlistrep_shape(y, p) ** data_at(&(p->next), y) ** dllseg_shape(head, 0, p_prev_2, p)`.
+
+In entail_wit_2, notice that both p->prev and p->next data_at's are present. These are from the field expressions in the invariant! Wait, but the invariant is `exists p_prev, p != 0 && dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. There are NO field expressions here! So where do the data_at(&(p->prev), ...) and data_at(&(p->next), ...) come from?
+
+Oh! They come from strategies unfolding dlistrep_shape(p, p_prev) during symexec! The unfolding produces data_at for p->next and p->prev. And the dllseg_shape is preserved.
+
+So the strategy DOES unfold dlistrep during the loop body execution (symexec). But it DOESN'T unfold it during the entry entailment check (Coq). This is because symexec has access to the exact program state and can apply strategies during execution, while the Coq proof is more abstract.
+
+Alright, so the issue is clear:
+- Symexec unfolds dlistrep during loop execution to handle p = p->prev
+- But during the entry entailment in Coq, strategies don't unfold dlistrep on the left to match the invariant on the right
+
+For entail_wit_2, the left side already has the unfolded form (because the loop body unfolded it during symexec). The right side needs the folded invariant with p updated. The issue is contracting dllseg.
+
+For entail_wit_1, the left side has the folded precondition. The right side has the invariant. Simple exists-variable instantiation should work (p_prev = l_prev), and extra data_at for l should be frame-able.
+
+But wait, if the forward traversal works (which also has exists variables and extra stack bindings), why doesn't my backward traversal work for entail_wit_1?
+
+Let me actually think about what changes I should make. The SKILL.md strategies suggest:
+
+For entail_wit_1: Use field expressions (strategy 4) → but this changes the problem from 2 admitted to 1 (entail_wit_1 only, in a different form).
+
+Wait actually, with field expressions:
+- entail_wit_1 admitted (entry fails due to field expression data_at needing dlistrep unfolding)
+- entail_wit_2 works (preservation passes due to adaptive field expressions)
+
+With exists variables:
+- entail_wit_1 admitted (entry fails for some reason)
+- entail_wit_2 admitted (preservation fails due to dllseg contraction)
+
+So neither approach fully works.
+
+For the field expression approach (1 admitted): the entry issue is that left side has folded dlistrep but right side has data_at from field expressions. If there was a strategy rule to unfold dlistrep on the left, entry would work.
+
+For the exists variable approach (2 admitted): the entry issue is unclear, and preservation fails due to missing dllseg contraction rule.
+
+Let me try one more approach. What if I combine them — field expressions for the dllseg boundary (handles preservation) and a different structure for the rest:
+
+```
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p, p->prev)
+ */
+```
+
+This has field expression only on p->prev (in dllseg), and uses p->prev as the prev pointer for dlistrep. Wait, but p->prev in dlistrep as second argument is a field expression too.
+
+Hmm, I need to think about what QCP generates for p->prev in dllseg arg[2]:
+- QCP creates: data_at(&(p_val->prev), p_prev_val)
+
+And for p->prev in dlistrep arg[1]:
+- QCP creates: data_at(&(p_val->prev), p_prev_val) — wait, but there's already one from dllseg!
+
+Actually no, dlistrep's second argument is just a value — it's the prev pointer value. It's NOT a field expression that creates data_at. Only the FIRST argument position might be a field expression?
+
+Wait, let me check. In the full field expression version:
+```
+dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)
+```
+
+QCP created:
+```
+data_at (&(p_285_value->prev), struct list*, p_value_prev_286)
+data_at (&(p_285_value->next), struct list*, p_value_next_288)
+```
+
+These are from p->prev (arg[2] of dllseg) and p->next (arg[0] of dlistrep). So field expressions in ANY argument position create data_at.
+
+So in my hybrid approach `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p, p->prev)`:
+- p->prev in dllseg arg[2]: creates data_at(&(p->prev), ...)
+- p->prev in dlistrep arg[1]: this is ALSO a field expression? Let me check...
+
+Actually, I think in predicate arguments, ALL occurrences of field expressions create data_at. So both p->prev (in dllseg) and p->prev (in dlistrep) would create separate data_at for the same field. This is a dup_data_at!
+
+OK, let me focus on making the exists-variable version work. 2 Admitted. What if I try strategy 3: carry frame items with PROP equalities?
+
+Looking at the left side of entail_wit_1: `data_at(&l, l_pre) ** ...`
+The right side: `EX p_prev, dllseg_shape(head_pre, 0, p_prev, l_pre) ** dlistrep_shape(l_pre, p_prev)`
+
+What if I add `l_pre == p` as a PROP? But at the invariant, p = l, so this is always true.
+
+Actually, the issue might be simpler than I think. Let me check: does the left side have `data_at(&p, l_pre)` (p's stack binding)? In the invariant, QCP creates `data_at(&p, p_val)` because p appears as a predicate argument. So the invariant's right side would have:
+- EX p_prev, data_at(&p, p_val) ** dllseg_shape(head_pre, 0, p_prev, p_val) ** dlistrep_shape(p_val, p_prev)
+
+At entry, p_val = l_pre. So:
+- data_at(&p, l_pre) matches left's data_at(&p, ...) — wait, the left might not have an explicit data_at for p. Actually, after `p = l`, the program state has `data_at(&p, l)`. And the invariant creates `data_at(&p, p_val)`. So p's binding is handled.
+
+The left side has `data_at(&l, l_pre)` in addition. This is for the variable l. l is NOT mentioned in the invariant (it's not in any predicate argument). So the invariant doesn't create data_at for l.
+
+But in the forward traversal case: `dllseg_shape(l, 0, p_prev, p) * dlistrep_shape(p, p_prev)`. Here, l IS arg[0] of dllseg, so data_at(&l, l_val) is created. l's binding is carried.
+
+So maybe the issue is that l's binding IS implicitly there through the invariant. Actually wait, in the invariant, head is used (not l). So head's binding is created but l's is not.
+
+The question is: does QCP frame off the extra data_at(&l, l_pre)? If not, entail_wit_1 fails.
+
+Let me test this hypothesis: add l to the invariant somehow.
+
+```
+/*@ Inv Assert exists p_prev,
+    p != 0 &&
+    dllseg_shape(head, 0, p_prev, p) *
+    dlistrep_shape(p, p_prev)
+ */
+```
+
+What if I add `has_permission(&l)`? l is a parameter, not used in the loop. But has_permission would carry l's stack cell into the invariant. This might help.
+
+But wait, l is not dereferenced in the loop body, so has_permission is not needed per the checklist.
+
+Let me just try it.
+
+[TEXT]
+Let me analyze the two Admitted goals. For `entail_wit_1`, the left has `data_at(&l, l_pre)` which is NOT in the invariant. For `entail_wit_2`, dllseg can't be contracted from the right. Let me try strategy 3 (carry frame items with PROP equalities) by adding `has_permission(&l)` to carry l's stack binding.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert exists p_prev,\n\t    p != 0 &&\n\t    dllseg_shape(head, 0, p_prev, p) *\n\t    dlistrep_shap
+
+============================================================
+[THINKING] (19 chars)
+============================================================
+Let me verify this.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (25 chars)
+============================================================
+Let me check the results.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log && echo "=== Admitted ===" && grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (3267 chars)
+============================================================
+Progress! `has_permission(&l)` fixed `entail_wit_1`! Now only `entail_wit_2` (preservation) remains.
+
+This makes perfect sense. `has_permission(&l)` carries the l stack binding into the invariant, preventing it from being dropped. This fixes the entry entailment.
+
+Now I have only `entail_wit_2` (preservation) to fix. The SKILL.md says this is caused by the dllseg not being contractable from the right. The fix is field expressions (strategy 4).
+
+Let me apply the field expression approach from strategy 4, keeping `has_permission(&l)`. The invariant would be:
+
+```
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p->next, p) *
+    has_permission(&l)
+ */
+```
+
+But wait, with field expressions, the entry entailment might break again because the field expressions create data_at that the folded precondition can't match.
+
+Actually, wait — with `has_permission(&l)`, the entry entailment for the field expression version would have:
+- Left: data_at(&l, l_pre) ** undef_data_at from has_permission ** dllseg ** dlistrep_shape(l_pre, l_prev)
+- Right: data_at(&l, ...) from has_permission ** data_at(&(l_pre->prev), ...) from p->prev field expr ** data_at(&(l_pre->next), ...) from p->next field expr ** dllseg(...) ** dlistrep(...)
+
+Hmm, the left has a folded dlistrep and the right has field expression data_at for l_pre->prev and l_pre->next. The strategies still can't unfold dlistrep on the left.
+
+Actually, wait. Let me re-examine. With `has_permission(&l)`, the entry passed in the exists-variable approach. In the exists-variable approach, the right side has:
+- EX p_prev, data_at(&p, l_pre) ** data_at(&l, l_pre) ** dllseg(head_pre, 0, p_prev, l_pre) ** dlistrep(l_pre, p_prev)
+
+This doesn't have field expression data_at. The left has `data_at(&l, l_pre) ** dllseg(head_pre, 0, l_prev, l_pre) ** dlistrep(l_pre, l_prev)`. With p_prev = l_prev, the match is perfect.
+
+Now, with field expressions, the right side would have extra data_at for l_pre->prev and l_pre->next. These need to be matched by the left side. The strategy would need to unfold dlistrep on the left to produce these data_at. This unfolding might not happen for entail_wit_1.
+
+So if I switch to field expressions, I might regain entail_wit_1 (entry fails again) but lose entail_wit_2 (preservation works).
+
+Hmm, this is a catch-22. Let me think about a solution that handles both.
+
+Actually, wait — maybe I should try the field expression approach WITH has_permission(&l). Let me check if the has_permission changes anything for the field expression case.
+
+With has_permission(&l), QCP creates undef_data_at for l. But the data_at for l from the precondition is field data_at (not undef). Does this cause issues?
+
+Actually, in the exists-variable approach with has_permission(&l), the right side creates `undef_data_at(l_addr, struct list*)` because has_permission creates undef_data_at. But the left side has `data_at(l_addr, l_pre)` (defined data_at with value l_pre). So there's a conflict: defined vs undefined data_at for the same address!
+
+But entail_wit_1 passed! So QCP must handle this somehow. Maybe the strategy resolves this by matching the defined data_at to the undef_data_at.
+
+Let me try the field expression approach with has_permission(&l).
+
+[TEXT]
+`has_permission(&l)` fixed the entry! Now only entail_wit_2 remains. This is the preservation failure from the exists-variable being fixed (SKILL.md strategy 4). Let me apply the field expression fix while keeping `has_permission(&l)`.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c', 'old_string': '     /*@ Inv Assert exists p_prev,\n\t    p != 0 &&\n\t    dllseg_shape(head, 0, p_prev, p) *\n\t    dlistrep_shap
+
+============================================================
+[THINKING] (72 chars)
+============================================================
+Now let me verify the field expression approach with has_permission(&l).
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log
+
+============================================================
+[THINKING] (21 chars)
+============================================================
+Let me check results.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_verify.log && echo "=== Admitted ===" && grep -B2 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (98 chars)
+============================================================
+No "Admitted" output from grep! That means there are 0 Admitted proofs! Let me verify by counting.
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_proof_manual.v
+
+============================================================
+[THINKING] (280 chars)
+============================================================
+0 Admitted proofs! The invariant is verified! 
+
+Let me now write the result to result.txt. The final invariant is:
+
+```c
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p->next, p) *
+    has_permission(&l)
+ */
+```
+
+Let me write the result file.
+
+[TEXT]
+**QCP_VERIFIED: YES** -- 0 Admitted proofs. Let me write the result.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/tmp/iter_back_inv.c
+
+============================================================
+[THINKING] (33 chars)
+============================================================
+Now let me write the result file.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/linux/changed_codes/list/iterator_back/result.txt
+
+============================================================
+[THINKING] (1182 chars)
+============================================================
+The result is written. Let me summarize the work done and the final solution.
+
+The invariant was found through iterative refinement:
+
+1. First attempt (field expressions): `dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p)` → 3 Admitted (entail_wit_1, entail_wit_2, return_wit_1)
+
+2. Second attempt (exists-variable): `exists p_prev, p != 0 && dllseg_shape(head, 0, p_prev, p) * dlistrep_shape(p, p_prev)` → 2 Admitted (entail_wit_1, entail_wit_2)
+
+3. Third attempt (exists-variable + has_permission): Added `has_permission(&l)` → 1 Admitted (only entail_wit_2)
+
+4. Fourth attempt (field expressions + has_permission): `p != 0 && dllseg_shape(head, 0, p->prev, p) * dlistrep_shape(p->next, p) * has_permission(&l)` → 0 Admitted ✓
+
+The key insight is that `has_permission(&l)` was needed because the Inv Assert replaces the entire program state, and l (a parameter not used in any shape predicate argument) would otherwise be dropped, causing the entry entailment to fail. The field expressions `p->prev` and `p->next` (strategy 4) solve the preservation issue by making the dllseg boundary adaptive to p's changes, avoiding the need for a dllseg right-contraction rule.
+
+[TEXT]
+The task is complete. Here is a summary of what was done:
+
+**File**: `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/linux/changed_codes/list/iterator_back/iter_back.c`
+
+**Loop**: Backward traversal of a doubly-linked list (`p = p->prev` until `p == head`)
+
+**Final Invariant**:
+```c
+/*@ Inv Assert p != 0 &&
+    dllseg_shape(head, 0, p->prev, p) *
+    dlistrep_shape(p->next, p) *
+    has_permission(&l)
+ */
+```
+
+**Result**: `QCP_VERIFIED: YES` (0 Admitted proofs in `iter_back_proof_manual.v`)
+
+**Key steps in the refinement** (3 attempts total):
+
+| Attempt | Approach | Admitted | Cause |
+|---------|----------|----------|-------|
+| 1 | Field expressions only | 3 (entry, preservation, return) | Missing `p != 0` PROP triggered Memory Read fatal error |
+| 2 | Exists-variable + `p != 0` | 2 (entry, preservation) | Entry: l's stack binding dropped by Inv Assert. Preservation: dllseg can't contract from right |
+| 3 | Exists-variable + `p != 0` + `has_permission(&l)` | 1 (preservation) | `has_permission(&l)` carries l's stack binding into the invariant, fixing entry |
+| 4 | Field expressions + `p != 0` + `has_permission(&l)` | **0** | Field expressions (`p->prev`, `p->next`) make the dllseg/dlistrep boundary self-adapting, fixing preservation |
+
+**Strategies applied**:
+- **Strategy 5** (non-null PROP): `p != 0` to trigger dlistrep unfolding for `p->prev` access
+- **Strategy 4** (field expressions on both sides): `p->prev` and `p->next` adapt automatically when `p` changes, avoiding the missing dllseg right-contraction rule
+- **Strategy 3** (carry frame items): `has_permission(&l)` to prevent `l`'s stack binding from being dropped when Inv Assert replaces the program state

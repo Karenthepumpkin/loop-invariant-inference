@@ -1,0 +1,1820 @@
+
+============================================================
+[THINKING] (277 chars)
+============================================================
+The user wants me to run the full SKILL.md pipeline on a specific C file and save results to a specific directory. Let me first read the SKILL.md file to understand the complete workflow, then execute it step by step.
+
+Let me start by reading the SKILL.md and the input C file.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/SKILL.md
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c
+
+============================================================
+[THINKING] (793 chars)
+============================================================
+Let me analyze the input file and the SKILL workflow carefully.
+
+The input file is `multi_merge.c` - it uses `dll_nodata_def.h`, so I need to read the corresponding reference file.
+
+Let me understand the program:
+- `multi_merge` takes three dlistrep_shape lists: x, y, z
+- It merges them into a single doubly-linked list
+- The function first checks if x is null, if so returns merge(y,z)
+- Otherwise, it traverses x (starting at t=x, u=t->next)
+- In each iteration, if y exists, it splices y's head node into the list
+- If z exists, it splices z's head node into the list
+- Then advances t and u
+- After the loop, it appends merge(y,z) and returns x
+
+This is a complex doubly-linked list merge of three lists.
+
+Let me first read the dll_nodata reference to understand the predicates available.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/references/dll_nodata.md
+
+============================================================
+[THINKING] (4903 chars)
+============================================================
+Now let me understand the program fully and plan the workflow.
+
+The program `multi_merge` merges three doubly-linked lists (x, y, z) into one.
+
+Key observations:
+1. Input: three dlistrep_shape lists (x->prev=0, y->prev=0, z->prev=0)
+2. Output: single dlistrep_shape(__return, 0)
+3. The function:
+   - If x == 0, returns merge(y, z)
+   - Else:
+     - t = x, u = t->next (u acts as the "next" pointer through the x list)
+     - While u (i.e., while there are more nodes in x beyond the first):
+       - Optionally splice in y's head node
+       - Optionally splice in z's head node  
+       - Connect t->next = u, u->prev = t
+       - Advance: t = u, u = u->next
+   - After loop: merge remaining y,z, append to t, return x
+
+Let me trace through the loop body more carefully:
+
+The loop iterates while `u` is not null (u starts as t->next, i.e., x->next).
+
+In each iteration:
+1. If y is not null: splice y between t and u
+   - t->next = y
+   - y->prev = t
+   - t = y
+   - u->prev = t (wait, but u hasn't changed... u->prev = t = y)
+   - y = y->next
+   - if y: y->prev = 0
+2. If y is null: merge(u, z), stitch, and return x (exit!)
+3. If z is not null: splice z between t and u
+   - t->next = z
+   - z->prev = t
+   - t = z
+   - u->prev = t (u->prev = z)
+   - z = z->next
+   - if z: z->prev = 0
+4. If z is null: merge(u, y), stitch, and return x (exit!)
+
+After both optional splices:
+5. t->next = u
+6. u->prev = t
+7. t = u
+8. u = u->next
+
+So the loop:
+- Maintains the dlist from x (the original head) through t to u, where the segment from x to t is "built" and the rest is the original x list
+- Splices in nodes from y and z as it goes
+- After the loop, merges whatever is left of y and z, appends to t
+
+This is complex. Let me think about what the invariant should be.
+
+The key invariant structure:
+- `dllseg_shape(x, 0, t, u)`: The segment from x (with prev=0) to t (not including u), where t is the current position and u is the next node to process
+- `dlistrep_shape(u, t)`: The remaining x list starting at u with prev=t
+- `dlistrep_shape(y, 0)`: The remaining y list (if any)
+- `dlistrep_shape(z, 0)`: The remaining z list (if any)
+
+Wait, but after splicing nodes from y and z, the y and z lists shrink. The invariant needs to account for the fact that the heads of y and z may have been spliced into the main list.
+
+Let me think more carefully. The segment `dllseg_shape(x, 0, t, u)` describes the processed prefix of the combined list, from original head x to current t, where t->next == u.
+
+And `dlistrep_shape(u, t)` describes the remaining unprocessed suffix of x, with u->prev = t.
+
+y and z are the remaining nodes of those lists that haven't been processed yet.
+
+But wait - the nodes taken from y and z are spliced BETWEEN t and u. So:
+- The segment from x (head) to t (current end of processed part) includes all the spliced-in y and z nodes
+- The remaining x list starts at u
+
+After a splice of y's head node:
+- That head node becomes part of the segment between x and u
+- The rest of y (y->next) remains as dlistrep_shape(y, 0)
+
+Similarly for z.
+
+So the invariant should be:
+```
+dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t) * dlistrep_shape(y, 0) * dlistrep_shape(z, 0)
+```
+
+Plus PROP constraints:
+- `t != 0` (t always points to a valid node in the segment)
+- `u != 0` (the loop condition ensures this at each iteration start)
+
+Wait, actually u could be null at some point... but the loop condition is `while (u)`, so when we enter the loop, u != 0. But the invariant should hold at every loop iteration start, not just the first. The invariant holds at the loop head. After the last iteration, u could become null and we exit the loop.
+
+Actually, let me re-read the loop. The loop condition is `while (u)`. At the loop head (before each condition check), if u == 0, we exit. So at the loop head when entering the loop body, u != 0.
+
+The invariant holds at the loop head, which is before the condition check. Since the while condition check doesn't change state, the invariant also holds when entering the body (with u != 0 from the condition). But the condition is evaluated separately from the invariant — actually, in QCP, the invariant is the state at the loop head.
+
+Hmm, let me think about this differently. The RP_pre_loop captures state before the first if-check inside the unrolled loop. Let me first run the pipeline and look at the RPs.
+
+Actually, let me just start the workflow. I'll run the steps sequentially.
+
+Let me define the variables:
+- SKILL_DIR = /home/tzh66/loop-invariant-inference
+- Input file = /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c
+- RESULT_DIR = /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge
+- name = multi_merge
+
+The header is `dll_nodata_def.h` → lib = `dll_nodata_shape_lib`
+
+Let me create the result directories first.
+
+[TEXT]
+Now let me create the result directories and run step 1.1 (unroll the loop).
+
+[TOOL: Bash]
+Bash: mkdir -p /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp
+
+============================================================
+[THINKING] (34 chars)
+============================================================
+Now let me run the unrolling step.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c --output /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c --ensure-emp
+
+============================================================
+[THINKING] (80 chars)
+============================================================
+Good, the unrolling succeeded. Now let me run the symbolic execution (step 1.2).
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra --input-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c --basic-assertion --primary-assertion 2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (106 chars)
+============================================================
+The command is running in the background. I'll wait for it to complete. Let me check on it after a moment.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log 2>/dev/null || echo "Still running..."
+
+============================================================
+[THINKING] (104 chars)
+============================================================
+It's still running or it completed but we're seeing what was written. Let me check the tail differently.
+
+[TOOL: Bash]
+Bash: tail -5 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log 2>/dev/null
+
+============================================================
+[THINKING] (71 chars)
+============================================================
+Still seems like it's outputting. Let me wait for the task to complete.
+
+[TOOL: Bash]
+Bash: tail -1 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log 2>/dev/null
+
+============================================================
+[THINKING] (71 chars)
+============================================================
+Still incomplete output. Let me wait for the background task to finish.
+
+[TOOL: TaskStop]
+TaskStop: {'task_id': 'b2d6idavh'}
+
+============================================================
+[THINKING] (41 chars)
+============================================================
+Let me check the end of the log file now.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (212 chars)
+============================================================
+The symexec run was incomplete - it got killed before completing. The output doesn't end with "Successfully finished symbolic execution". I need to re-run it with a longer timeout since this is a complex program.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra --input-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c --basic-assertion --primary-assertion 2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (84 chars)
+============================================================
+The output is very large. Let me check the tail to see if it completed successfully.
+
+[TOOL: Bash]
+Bash: tail -5 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (106 chars)
+============================================================
+Hmm, it doesn't look like it says "Successfully finished symbolic execution". Let me check more carefully.
+
+[TOOL: Bash]
+Bash: grep -i "successfully finished\|Successfully finished" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log | tail -5
+
+============================================================
+[THINKING] (241 chars)
+============================================================
+The symexec didn't complete successfully. The output doesn't contain "Successfully finished symbolic execution". There might be an error. Let me check the end of the log more carefully and also look for "fatal error" or other error messages.
+
+[TOOL: Bash]
+Bash: tail -30 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (415 chars)
+============================================================
+The symexec completed but ended with empty goal state and no explicit success/failure message visible. The output seems like it finished running through all paths but the verification goal at the end was `emp` (which means it failed). Let me look at the goal file to check what happened.
+
+Actually, wait - the "Successfully finished symbolic execution" message is what the gate checks. Let me search more carefully.
+
+[TOOL: Bash]
+Bash: grep -i "success\|error\|fatal\|fail\|traceback\|Exception" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log | tail -10
+
+============================================================
+[THINKING] (504 chars)
+============================================================
+There's a "fatal error" - "with variable (id = 12699) not instantiated". This means the unrolled program has an issue. Let me check the unrolled file at line 164.
+
+Wait, looking at the original code more carefully — the function `multi_merge` calls `merge()`, but `merge` is only declared, not defined in this file. When the loop is unrolled, the unrolled code still calls `merge`, and QCP gets confused because `merge` is a separate function.
+
+Let me look at the unrolled file to see what's at line 164.
+
+[TOOL: Bash]
+Bash: wc -l /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c
+
+============================================================
+[THINKING] (40 chars)
+============================================================
+Let me look at the area around line 164.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c
+
+============================================================
+[THINKING] (6988 chars)
+============================================================
+The error is on line 164: `u = merge(y,z);`. This is after the loop. The error says "with variable (id = 12699) not instantiated". This seems to be related to the `merge` function call — QCP needs to symbolically execute `merge`, but it's a separate function that hasn't been inlined.
+
+Looking at the `merge` declaration:
+```c
+struct list *merge(struct list *x , struct list *y)
+/*@ With x_prev 
+    Require dlistrep_shape(x,x_prev) * dlistrep_shape(y,0)
+    Ensure  emp */;
+```
+
+The Ensure is `emp` — which means after merge, the function returns and the resulting list is... emp? That seems like an issue. The Ensure should be `dlistrep_shape(__return, x_prev)` or similar. But that's the input file's declaration, not something I should change.
+
+Actually, looking at the original file, the declaration has:
+```c
+/*@ With x_prev 
+    Require dlistrep_shape(x,x_prev) * dlistrep_shape(y,0)
+    Ensure  dlistrep_shape(__return,x_prev)
+ */
+```
+
+But the unrolled file changed the Ensure to `emp` because of `--ensure-emp`. This makes the function consume the dlist lists without returning them. This causes the symbolic execution to fail because after the `merge` call, the list is gone.
+
+The `--ensure-emp` flag replaces Ensure with `emp` to avoid postcondition checking in the middle of unrolled code. But this means that QCP will consume the resources and not return them. However, in the actual code path, after the merge call in the unrolled code, the function returns immediately. So the `merge` calls at lines 40, 55, 86, 101, 132, 147 are all followed by `return x;` — the function exits right after.
+
+The error is at line 164, which is the `merge` call AFTER the unrolled loop. This is the actual post-loop code. Since the function doesn't return immediately after this merge call (it continues with `t->next = u` etc.), the resources consumed by merge need to be available.
+
+The fact that the error says "with variable (id = 12699) not instantiated" suggests there's a unification problem. The issue is that after the `merge` call with `Ensure emp`, the function returns nothing, but the code then tries to use `u` (the return value) and access `t->next` etc.
+
+Let me think about this differently. The error occurs at line 164 which is unrolled iteration 4 (that's what happens after the loop). 
+
+Actually wait - line 164 is part of the original code after the while loop. Looking at the unrolled file, the while loop body was unrolled 3 times, and when the loop exits (u becomes null), we go to the post-loop code.
+
+Let me look at the error more carefully:
+```
+fatal error: with variable (id = 12699) not instantiated in ...multi_merge_unrolled.c:164:2
+```
+
+Line 164 is `u = merge(y,z);`.
+
+The issue is:
+1. After the unrolled loop iterations, we have the state at line 163 (`}` which closes the else branch).
+2. Then at line 164, we call `merge(y,z)`. But the specification for `merge` has been changed to `Ensure emp` by the `--ensure-emp` flag.
+3. When QCP symbolically executes `merge(y,z)` with `Ensure emp`, it consumes the `dlistrep_shape(y,0) * dlistrep_shape(z,0)` predicates and doesn't return anything, but then at line 165, `t->next = u` tries to access `u` which should have been set by the merge call.
+
+Wait, but with `Ensure emp`, the function's result is `emp`, meaning it doesn't provide any postcondition. The return value `u` would be unconstrained. The error "with variable (id = 12699) not instantiated" might refer to the return value variable.
+
+Also, after the while loop, the original code has:
+```c
+u = merge(y,z);
+t->next = u;
+```
+
+Since the symexec is called on the unrolled file which has `Ensure emp` for the merge declaration, the merge call consumes the lists but doesn't return anything useful. This is a problem.
+
+This seems like a fundamental issue with the approach — `merge` is a separate function that cannot be symbolically executed inline. The symexec would need the definition of `merge` to inline it.
+
+However, the SKILL.md says this is a valid workflow and the error handling says to look at the symexec log. The key is that the symexec cannot complete with the unrolled file. The fatal error is at the merge call.
+
+Let me think about whether I should try a different approach. Looking at the symexec output, it did make it quite far — it went through the 3 unrolled iterations and got to the post-loop code. The issue is specifically with the `merge` call after the loop.
+
+Wait, actually... let me re-read the `--ensure-emp` flag:
+```
+--ensure-emp: Replace Ensure with emp
+```
+
+This replaces all function spec Ensures with `emp`. So for the `merge` function, `Ensure dlistrep_shape(__return,x_prev)` becomes `Ensure emp`. This means after calling merge, QCP thinks the heap is empty and the return value is unconstrained.
+
+For the merge calls inside the loop (lines 40, 55, etc.), this is OK because those paths return immediately after the merge call. But for the post-loop merge call at line 164, it's a problem because the code continues.
+
+However, this is the standard workflow and should handle this. Maybe the default unroll depth of 3 is too deep, causing the post-loop code to be reached. Or maybe we need to handle the merge call differently.
+
+Actually, looking more carefully at the error message, it says "with variable (id = 12699) not instantiated". This is a QCP internal error, not a typical verification failure. The symexec binary crashes with an internal error because it can't handle the unresolved variable.
+
+This is a limitation: the symbolic executor can't handle the function call to `merge` because:
+1. It doesn't have the definition of `merge` to inline
+2. The `Ensure emp` makes the postcondition empty, so the return value is unconstrained
+
+Let me try running the symexec without `--ensure-emp` for the initial unrolled run, or try a different approach.
+
+Actually, I think the right approach is to inline the `merge` function. But the input file only has a declaration, not a definition. The `merge` function is defined elsewhere.
+
+Hmm, but this is about inferring the loop invariant for the `multi_merge` function, not about verifying the entire program. The symexec needs to execute the unrolled loop and extract states. The issue is that the post-loop code references `merge` which causes a problem.
+
+Let me check: does the error happen at a point that matters for the RPs? The RPs are extracted at the loop head, before each iteration. The error occurs after all unrolled iterations, at the post-loop merge call. The state extraction before that point should still work.
+
+Let me try to parse the log anyway and see if we get useful information. But first, let me check if the log file actually contains the recording point data.
+
+Actually wait - the error is a "fatal error" which might mean the symexec binary crashed/aborted before finishing. Let me check if it actually produced the recording points we need.
+
+Let me check if the symexec log contains the recording points (RP_pre_loop, RP_iter_2, etc.).
+
+[TOOL: Bash]
+Bash: grep -c "RP_" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec.log
+
+============================================================
+[THINKING] (5772 chars)
+============================================================
+No RP markers found in the log. The symexec binary crashed/failed before producing any recording points. The error happened at line 164 (the merge call after the loop).
+
+The issue is that the `merge` function inside the body also causes issues. Let me look at the error more carefully.
+
+Actually, looking at the code flow:
+1. Line 164 is `u = merge(y,z);` — this is the first statement after the unrolled while loop 
+2. The error "with variable (id = 12699) not instantiated" is at line 164
+
+But wait, the symexec seems to have produced a lot of output before the fatal error. Let me check if the parsing would work on the partial output, or if the state information is available.
+
+Actually, the problem is that the fatal error means the symexec aborted. Let me think about what to do.
+
+Options:
+1. Try to reduce the unroll depth to 2 (maybe the problem is at the post-loop code after 3 unrollings)
+2. Try to inline the merge function
+3. Modify the merge function declaration in the unrolled file to not use Ensure emp
+
+Wait, the flag is `--ensure-emp`. Let me try without it, or better yet, think about what SKILL.md says about this.
+
+Actually, the `merge` function call inside the loop body (lines 40, 55, 86, 101, 132, 147) would also be problematic. When y is null, the code calls `u = merge(u, z)` and returns. The `--ensure-emp` makes merge's postcondition be emp, which means after the call, qcp thinks the heap is empty.
+
+But for the merge calls inside the loop body (followed by return), it doesn't matter because the function returns right after. For the merge call after the loop at line 164, it continues.
+
+Actually, the problem might be more subtle. The merge call inside the loop with `Ensure emp` means QCP will consume `dlistrep_shape(y,0) * dlistrep_shape(z,0)` and return nothing. But then the code continues to the next iteration. The issue is that subsequent iterations try to access y/z which no longer exist.
+
+Wait, but for the merge calls inside the loop body (lines 40 and 55 for iter 1, etc.), the code does `return x;` right after. So QCP shouldn't continue to the next iteration after that path.
+
+But the error at the post-loop code at line 164 happens on ALL paths — even paths that returned earlier. Maybe QCP continues merging paths and encounters the error.
+
+Let me try running symexec without `--ensure-emp` for the initial run, or try to deal with the merge function differently.
+
+Actually, looking at this more carefully - the fatal error message says "with variable (id = 12699) not instantiated". This is a variable in QCP's internal representation that wasn't resolved. This could be related to how QCP handles function calls with unresolved function bodies.
+
+I think the key issue is that the `merge` function is a separate function call that QCP can't inline. We need to provide the merge function definition inline.
+
+Let me try a different approach: I'll first check if there's a way to make the symexec work. Perhaps I should inline the merge function body.
+
+Actually, let me re-examine the issue. The error says line 164 which is the post-loop code. Let me think about whether this means ALL paths fail, or just some paths.
+
+The symexec works by exploring all paths. When one path has an error, it might still produce useful output for other paths. Let me check if there are any recording points in the output.
+
+Actually, I checked and there are 0 RP_ markers. So the symexec didn't produce any recording points. The issue is likely that the fatal error prevents any output from being generated.
+
+Hmm, let me think about what the `merge` function call in the original (non-unrolled) code does. The declaration has:
+```c
+struct list *merge(struct list *x , struct list *y)
+/*@ With x_prev 
+    Require dlistrep_shape(x,x_prev) * dlistrep_shape(y,0)
+    Ensure  dlistrep_shape(__return,x_prev)
+ */;
+```
+
+This is a specification with `With x_prev`, `Require`, `Ensure`. QCP can handle this as a function call spec without needing the body. The key is that the spec provides the contract.
+
+With `--ensure-emp`, the Ensure becomes `emp`, meaning the function's return value is neither constrained nor provides any heap predicates.
+
+But here's the thing: QCP's symbolic execution for function calls needs to handle the call according to the spec. When Ensure is `emp`, QCP should still be able to execute it by:
+1. Consuming the Requires predicates
+2. Producing the Ensure predicates (which is emp, i.e., nothing)
+3. Assigning the return value
+
+The error "with variable (id = 12699) not instantiated" suggests that a unification variable wasn't resolved, which could be the return value's type or the existential variable `x_prev`.
+
+Let me try running without `--ensure-emp` to see if that helps. Actually, looking at SKILL.md step 1.1, it says `--ensure-emp` is needed. But maybe for this specific case, the `merge` call makes it impossible.
+
+Alternatively, maybe I need to look at this more carefully. Let me re-read the code flow. After the while loop is unrolled 3 times, we reach line 164. But the code has multiple early returns inside the loop (when y is null or z is null). So many execution paths return before reaching line 164.
+
+For symexec, it explores all paths. Some paths return early (through the merge inside the loop), and some paths reach line 164 (through all 3 iterations completing without y or z being null).
+
+The problem might be that on the paths that reach line 164, the state has:
+- The remaining x list starts at u (but u might be null after 3 iterations)
+- y and z lists are whatever's left
+- Then `u = merge(y,z)` is called with `Ensure emp`, consuming y and z
+
+Let me try to think about whether we can work around this. 
+
+Actually, let me try running without `--ensure-emp` to see if the symexec succeeds.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c --output /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled_noemp.c --file /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled_noemp.c
+
+============================================================
+[THINKING] (51 chars)
+============================================================
+Let me check the unroll_loop.py to see its options.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py
+
+============================================================
+[THINKING] (38 chars)
+============================================================
+Let me look for --ensure-emp handling.
+
+[TOOL: Bash]
+Bash: grep -n "ensure.emp\|ensure_emp\|--ensure" /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py
+
+============================================================
+[THINKING] (1444 chars)
+============================================================
+OK so `--ensure-emp` is the flag. Let me try without it - but actually, looking at the original file more carefully, maybe I should also think about whether the `merge` function is the issue.
+
+Actually, looking at the fatal error message again:
+```
+data_at ( &(z@pre->prev) , [1;31mfatal error: [0mError: with variable (id = 12699) not instantiated in /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled.c:164:2
+```
+
+It says line 164. But the last data_at shown is `data_at ( &(z@pre->prev) , struct list* , y@pre )`. This suggests the symexec is in the process of printing a state when the error occurs.
+
+Line 164 is `u = merge(y,z);`. The error is "with variable (id = 12699) not instantiated". This is a QCP internal error, meaning a unification variable in the symbolic execution wasn't resolved.
+
+I think the problem is that the `merge` function call after the while loop can't be resolved. The symexec tries to symbolically call `merge` with its spec, but something goes wrong with the variable instantiation.
+
+Actually, let me try a different approach. The issue might be that even without `--ensure-emp`, the spec-based execution of `merge` fails because of `x_prev` being a unification variable that can't be resolved. The `With x_prev` introduces an existential variable that QCP needs to instantiate.
+
+Let me try without `--ensure-emp` first.
+
+[TEXT]
+Let me try running the unrolling without `--ensure-emp` to see if that helps with the merge function call.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c --output /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled_noemp.c 2>&1
+
+============================================================
+[THINKING] (117 chars)
+============================================================
+OK, the unrolling succeeded without `--ensure-emp`. Let me check the output to make sure the merge spec is preserved.
+
+[TOOL: Bash]
+Bash: head -8 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled_noemp.c
+
+============================================================
+[THINKING] (78 chars)
+============================================================
+Good, the merge spec is preserved. Let me try running symexec on this version.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra --input-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_unrolled_noemp.c --basic-assertion --primary-assertion 2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log
+
+============================================================
+[THINKING] (52 chars)
+============================================================
+Let me check if this version completed successfully.
+
+[TOOL: Bash]
+Bash: tail -5 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log
+
+============================================================
+[THINKING] (115 chars)
+============================================================
+Same issue - still doesn't show "Successfully finished symbolic execution". Let me check for errors and RP markers.
+
+[TOOL: Bash]
+Bash: grep -c "RP_" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log && grep -i "fatal\|success" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log | tail -5
+
+============================================================
+[THINKING] (2690 chars)
+============================================================
+Still 0 RP markers and the exit code is 1 from grep (fatal/success not found). The issue is fundamental - the symexec can't handle the merge function call.
+
+Let me think about this differently. The problem is that `merge` is called both inside the loop and after it. Maybe I should:
+
+1. Try with `--depth 2` instead of 3, so fewer paths and the post-loop code might not be reached
+2. Try modifying the spec to handle the merge call
+
+Actually, wait. Let me re-read the error. The fatal error says "with variable (id = 12699) not instantiated" at line 164 of the unrolled file. In the original file, the code after the loop is:
+
+```c
+u = merge(y,z);
+t->next = u;
+if (u) {
+    u->prev = t;
+}
+return x;
+```
+
+Line 164 in the unrolled file is `u = merge(y,z);` — this is the first line after the unrolled while loop.
+
+The problem: QCP tries to call `merge` with its specification. The `merge` function expects `dlistrep_shape(x, x_prev) * dlistrep_shape(y, 0)` and ensures `dlistrep_shape(__return, x_prev)`. But `x_prev` is a `With` parameter (existential), which QCP needs to infer. The error "with variable (id = 12699) not instantiated" suggests QCP can't infer the `x_prev` parameter.
+
+In the original merge spec: `With x_prev` means x_prev is an existential variable that QCP needs to infer from the calling context. Since merge expects `dlistrep_shape(x, x_prev)`, the x_prev would be the prev pointer of x. But when calling `merge(y, z)` after the loop, y's prev is 0 (from the Require in `multi_merge`), so `x_prev` should be 0.
+
+But QCP might not be able to determine this because the state has been modified by the loop iterations.
+
+Hmm, looking at the problem more holistically - I think the fundamental issue is that the `merge` function call within the unrolled code is creating problems. The `--ensure-emp` is designed to avoid these issues by turning all Ensures to emp, but the QCP binary still has issues with the merge call.
+
+Let me try another approach. Let me check if the symexec just produces too much output and the error message is just in the middle somewhere, not at the end. Maybe the symexec actually completed the unrolled loop but then failed at the post-loop code.
+
+Actually, looking at the original `multi_merge.c` more carefully:
+
+After the while loop:
+```c
+u = merge(y,z);
+t->next = u;
+if (u) {
+    u->prev = t;
+}
+return x;
+```
+
+This code is AFTER the loop. If the symexec can process the unrolled loop (3 iterations) successfully, it will try to process the post-loop code and fail on `merge(y,z)`.
+
+But the key question is: does the symexec produce RP states BEFORE hitting the error? If it does, we can parse them. Let me search the symexec log more broadly.
+
+[TOOL: Bash]
+Bash: grep -c "RP_pre_loop\|RP_iter" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log 2>/dev/null; echo "---"; grep "RP_pre_loop\|RP_iter" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log | head -5 2>/dev/null
+
+============================================================
+[THINKING] (589 chars)
+============================================================
+No RP markers at all. The symexec is failing very early, or it's producing output in a format that doesn't include the RP markers directly. Let me check the log for recording points. The qcp_parse_log.py script parses symexec output. Let me see what format the symexec produces.
+
+Actually, let me look at what the symexec log does contain - maybe the RPs are produced in a different format. Let me check for relevant markers.
+
+Actually, let me look at the log file in a structured way. The symexec output is huge (147MB). Let me check the first few thousand lines to understand the format.
+
+[TOOL: Bash]
+Bash: grep -i "recording\|snapshot\|state\|===========\|----------" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log | head -20
+
+============================================================
+[THINKING] (372 chars)
+============================================================
+Let me look at where `pre state:` entries are and what comes after them. The symexec log has "pre state:" markers which might contain the state we need.
+
+Actually, the fact that the symexec doesn't produce "Successfully finished symbolic execution" is concerning. Let me check if the log ends with data_at statements or is cut off.
+
+Let me look at the very end of the log.
+
+[TOOL: Bash]
+Bash: tail -20 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log
+
+============================================================
+[THINKING] (1601 chars)
+============================================================
+I see the symexec ends with `emp` as the goal state, then `End`. This is the end of symbolic execution output. The fact that the end goal is `emp` suggests it's checking the postcondition of `multi_merge` (which is `Ensure emp` in the unrolled version with `--ensure-emp`).
+
+Wait, I ran the version without `--ensure-emp`. Let me check what Ensure the multi_merge function has.
+
+Looking at the unrolled file without --ensure-emp, the multi_merge's spec should still have its original Ensure. Let me check.
+
+Actually, let me re-read the original input file:
+```c
+struct list *multi_merge(struct list *x , struct list *y, struct list *z)
+/*@ Require dlistrep_shape(x,0) * dlistrep_shape(y,0) * dlistrep_shape(z,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+```
+
+Without `--ensure-emp`, multi_merge's Ensure is preserved as `dlistrep_shape(__return,0)`.
+
+So the symexec is trying to verify that the function ensures `dlistrep_shape(__return,0)`, and the check shows `emp` as the goal - this means the verification failed. But the purpose here is just to get the symbolic states (recording points), not to verify the function.
+
+Wait, but the `--basic-assertion --primary-assertion` flags change the output format. Let me check the qcp_parse_log.py to understand what format it expects.
+
+Actually, let me look at the log more carefully. The message ends with `emp` which is the remaining goal. The symexec is trying to verify the function and ends with failure. But importantly, do the recording points get printed before the verification attempt?
+
+Let me look at the log file for lines that contain "RP_".
+
+[TOOL: Bash]
+Bash: grep -c "RP_pre_loop\|RP_iter\|--- RP_" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log 2>/dev/null; echo "---"; grep "RP_pre" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log 2>/dev/null | wc -l
+
+============================================================
+[THINKING] (326 chars)
+============================================================
+There are no RP markers in the symexec log, which means the recording points weren't generated. The symexec either doesn't produce the RPs in this mode or the fatal error interrupts the process before the RPs are emitted.
+
+Let me look at the qcp_parse_log.py to understand what format it expects and how the RPs get generated.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py
+
+============================================================
+[THINKING] (304 chars)
+============================================================
+Now I understand how the parsing works. The parser looks for specific markers in the symexec log:
+1. For switch mode: `(ps type 5): if ((cond && in_loop_N))` 
+2. It then walks backward to find the last assertion block before this if-check
+
+Let me check what assertion blocks look like in the symexec log.
+
+[TOOL: Bash]
+Bash: grep -c "Assertion begin\|Assertion end" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log
+
+============================================================
+[THINKING] (88 chars)
+============================================================
+There are 36236 assertion begin/end markers. And let me check for the switch if pattern.
+
+[TOOL: Bash]
+Bash: grep -c "ps type" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log
+
+============================================================
+[THINKING] (74 chars)
+============================================================
+Let me check the ps type markers to see if they match the expected format.
+
+[TOOL: Bash]
+Bash: grep "ps type" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log | head -30
+
+============================================================
+[THINKING] (1412 chars)
+============================================================
+Now I can see the pattern. The symexec log has:
+```
+(ps type 5): if ((u && in_loop))
+```
+
+This matches the switch-mode pattern `SWITCH_IF_RE = re.compile(r'\(ps type \d+\)\s*:\s*if\s*\(\((.+?)\s*&&\s*(in_loop\b[^)]*)\s*\)\)')`
+
+But wait - the condition is `(u && in_loop)` not `(u && in_loop_0)` or `(u && in_loop_1)` etc. Let me check what the actual in_loop variable name is.
+
+The regex is: `r'\(ps type \d+\)\s*:\s*if\s*\(\((.+?)\s*&&\s*(in_loop\b[^)]*)\s*\)\)'`
+
+Let me trace through this:
+- `(ps type 5): if ((u && in_loop))`
+- `(.+?)` would match `u `
+- `(in_loop\b[^)]*)` would match `in_loop`
+
+So it should match! Let me check if the parser is finding recording points.
+
+Actually, I noticed the ending of the noemp log shows `emp` which means the symexec finished (failed to verify the postcondition). But did it complete processing all paths?
+
+Let me check the log more carefully. Maybe the symexec log was generated from the version with `--ensure-emp` and the noemp one is still being written? Wait, I stopped the first task but let me check the noemp one exists and is complete.
+
+Actually, looking at the output of the noemp symexec, the last line shows `End` and the goal is `emp`. This looks like a complete run. Let me run the parser on this log.
+
+But wait - the parser might not work properly if the assertion blocks aren't in the right format. Let me try running the parser and see what happens.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py --file /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_symexec_noemp.log --out-states /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_states.txt --out-json /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_states.json
+
+============================================================
+[THINKING] (372 chars)
+============================================================
+We have 3 recording points! RP_pre_loop, RP_iter_2, and RP_iter_3. The parse was successful. Now I need to read the states file to understand the states at each point and infer the invariant.
+
+Let me also check the gate condition - the parser needs to find at least RP_pre_loop and RP_iter_2, and it found those plus RP_iter_3. Good.
+
+Now let me read the full states file.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_states.txt
+
+============================================================
+[THINKING] (41213 chars)
+============================================================
+Now I need to analyze these recording points and infer the loop invariant. Let me carefully analyze each RP.
+
+## RP_pre_loop (Before the first iteration)
+
+State before the first `if (u && in_loop)` check.
+- x@pre != 0 (t = x, u = t->next, so x is non-null)
+- u points to y_309 (which is x@pre->next)
+- t points to x@pre
+    
+SEP:
+- `data_at(&(x@pre->next), struct list*, y_309)` : x->next = y_309
+- `dlistrep_shape(y_309, x@pre)` : dlist starting at y_309, prev = x@pre
+- `data_at(&(x@pre->prev), struct list*, 0)` : x->prev = 0
+- `dlistrep_shape(y@pre, 0)` : y list intact
+- `dlistrep_shape(z@pre, 0)` : z list intact
+
+So in RP_pre_loop:
+- x is the head, it has next = y_309, prev = 0
+- The rest of x's list is dlistrep_shape(y_309, x@pre) 
+- y and z lists are intact
+
+This is essentially: `dlistrep_shape(x@pre, 0) * dlistrep_shape(y@pre, 0) * dlistrep_shape(z@pre, 0)`
+where x@pre has been partly unfolded to show the first node: `data_at(&x->next, y_309) * data_at(&x->prev, 0) * dlistrep_shape(y_309, x@pre)`
+with t = x and u = x->next = y_309.
+
+## RP_iter_2 (Before the second iteration)
+
+After one iteration of the loop body.
+
+The loop body:
+```
+if (y) {
+    // splice y between t and u
+    t->next = y;      // x->next = y (since t=x in iter 1)
+    y->prev = t;      // y->prev = x
+    t = y;            // t = y
+    u->prev = t;      // u->prev = y (= t)
+    y = y->next;      // y = y->next (advance y)
+}
+if (z) {
+    t->next = z;      // y->next = z (since t=y now)
+    z->prev = t;      // z->prev = y
+    t = z;            // t = z
+    u->prev = t;      // u->prev = z (= t)
+    z = z->next;      // z = z->next
+}
+t->next = u;          // z->next = u (since t=z now)
+u->prev = t;          // u->prev = z
+t = u;                // t = u (which is y_309, the first node of the "rest" of x)
+u = u->next;          // u = y_309->next = y_320
+```
+
+Wait, but this depends on whether y and z were non-null at the start of iteration 1. In RP_iter_2, the PROP constraints tell us:
+- y@pre != 0 (y was non-null)
+- z@pre != 0 (z was non-null)
+- y_309 != 0 (u was non-null, so x->next was non-null)
+- y_316 != 0 (y was non-null after advancing)
+- y_335 != 0 (z was non-null after advancing)
+
+So both y and z were spliced in iter 1.
+
+After one iteration where both y and z were non-null:
+
+Original x nodes: x, y_309 (which is x->next), y_320 (which is y_309->next)
+Original y nodes: y@pre, y_316 (which is y@pre->next)
+Original z nodes: z@pre, y_335 (which is z@pre->next)
+
+After iteration 1:
+- x ->next = y@pre, x->prev = 0
+- y@pre->next = z@pre, y@pre->prev = x
+- z@pre->next = y_309 (= u before iteration 1), z@pre->prev = y@pre
+- y_309->prev = z@pre
+- y_309->next = y_320 (rest of original x)
+- t = z@pre? No wait...
+
+Let me trace more carefully:
+
+Before iteration 1:
+- t = x@pre
+- u = y_309 (= x@pre->next)
+- y = y@pre (list: y@pre -> y_316 -> ...)
+- z = z@pre (list: z@pre -> y_335 -> ...)
+
+Iteration 1 body:
+```
+// y is non-null:
+t->next = y;          // x@pre->next = y@pre
+y->prev = t;          // y@pre->prev = x@pre
+t = y;                // t = y@pre
+u->prev = t;          // y_309->prev = y@pre  (u was x->next = y_309)
+y = y->next;          // y = y_316
+// y is non-null:
+y->prev = 0;          // y_316->prev = 0
+
+// z is non-null:
+t->next = z;          // y@pre->next = z@pre
+z->prev = t;          // z@pre->prev = y@pre
+t = z;                // t = z@pre
+u->prev = t;          // y_309->prev = z@pre  (overwriting prev)
+z = z->next;          // z = y_335
+// z is non-null:
+z->prev = 0;          // y_335->prev = 0
+
+// After both blocks:
+t->next = u;          // z@pre->next = y_309
+u->prev = t;          // y_309->prev = z@pre (already set above)
+t = u;                // t = y_309
+u = u->next;          // u = y_320 (= y_309->next, the next node from original x list)
+```
+
+So after iteration 1:
+- x@pre -> y@pre -> z@pre -> y_309 -> y_320 -> ...
+- t = y_309 (the new current position)
+- u = y_320 (the next node to process)
+- y = y_316 (remaining y list: y_316 -> ...)
+- z = y_335 (remaining z list: y_335 -> ...)
+
+The SEP for RP_iter_2 shows:
+- `data_at(&(x@pre->next), y@pre)` : confirmed: x->next = y@pre
+- `data_at(&(x@pre->prev), 0)` : confirmed: x->prev = 0
+- `data_at(&(y@pre->next), z@pre)` : confirmed: y@pre->next = z@pre
+- `data_at(&(y@pre->prev), x@pre)` : confirmed: y@pre->prev = x@pre
+- `data_at(&(z@pre->next), y_309)` : confirmed: z@pre->next = y_309
+- `data_at(&(z@pre->prev), y@pre)` : confirmed: z@pre->prev = y@pre
+- `data_at(&(y_309->next), y_320)` : confirmed: y_309->next = y_320
+- `data_at(&(y_309->prev), z@pre)` : confirmed: y_309->prev = z@pre
+- `dlistrep_shape(y_320, y_309)` : remaining x list
+- `data_at(&(y_316->next), y_324)` : remaining y list
+- `data_at(&(y_316->prev), 0)` : y_316->prev = 0
+- `dlistrep_shape(y_324, y_316)` : remaining y list
+- `data_at(&(y_335->next), y_341)` : remaining z list
+- `data_at(&(y_335->prev), 0)` : y_335->prev = 0
+- `dlistrep_shape(y_341, y_335)` : remaining z list
+
+So the state is:
+- Segment: x@pre -> y@pre -> z@pre -> y_309 (t) where:
+  - The segment from x (prev=0) to y_309 (t) includes x, y@pre, z@pre
+  - t = y_309, u = y_320
+  - The processed part is `dllseg_shape(x@pre, 0, z@pre, y_309)` from x through z@pre (z@pre is the last node inside the segment, y_309 is the end marker)
+  - Wait, let me think about dllseg parameters again:
+    - dllseg_shape(x, xp, yp, y) where:
+      - x = segment start
+      - xp = start's prev
+      - yp = last node IN segment
+      - y = endpoint marker (NOT in segment)
+    - So dllseg_shape(x@pre, 0, z@pre, y_309) means:
+      - segment from x@pre to y_309
+      - x@pre->prev = 0
+      - z@pre->next = y_309 (last node's next points to y_309)
+      - y_309 NOT in the segment
+    
+  This is correct! The segment goes x -> y@pre -> z@pre, and the end marker is y_309.
+
+- The remaining part from t: `dlistrep_shape(y_309, z@pre)` ... wait, but no. t = y_309, but the structure is:
+  - y_309->prev = z@pre, y_309->next = y_320
+  - y_320's list: `dlistrep_shape(y_320, y_309)`
+  
+  So `dlistrep_shape(u, t)` where u = y_320 and t = y_309:
+  - Hmm, actually looking at the SEP items, the dlistrep is `dlistrep_shape(y_320, y_309)` — y_320 starts a list with prev y_309.
+  
+But wait, the RP shows `t_298_addr` has value `y_309` and `u_301_addr` has value `y_320`. So `dlistrep_shape(u, t)` = `dlistrep_shape(y_320, y_309)`, which matches!
+
+- y remains: dlistrep_shape(y_316, 0) ... but y_316->prev = 0, so dlistrep_shape(y_316, 0) or equivalently dlistrep_shape(y@pre_remaining, 0) = dlistrep_shape(y, 0) where y = y_316 now. Wait, `y` variable = y_316 now (y was advanced). But the variable `y` in the program has been updated; at RP_iter_2, y = y_316.
+
+Hmm, but in QCP, the LOCAL shows `y_287_addr , struct list* , y_316`, meaning the variable y's address contains the value y_316, which is a symbolic value. In the invariant we use the program variable name `y`.
+
+Wait, actually in the QCP output, the LOCAL section maps variable addresses to values: `data_at ( y_287_addr , struct list* , y_316 )`. This means `&y` holds `y_316`. So the variable `y` now has the value y_316 (one node advanced from y@pre).
+
+Let me re-read the invariant construction rules:
+
+From SKILL.md 2.7:
+- **Frame items**: SEP predicates present in ALL RPs → invariant frame
+- **Sliding items**: Same predicate structure, advancing pointer values → track with data_at(...)
+- **Unfolding items**: New data_at nodes appear each iteration → the list is being traversed
+
+Let me check what's common across all three RPs:
+
+RP_pre_loop:
+- data_at(&(x@pre->next), y_309)
+- dlistrep_shape(y_309, x@pre)  [the rest of x list, named "u" in the program]
+- data_at(&(x@pre->prev), 0)
+- dlistrep_shape(y@pre, 0)  [y list, named "y"]
+- dlistrep_shape(z@pre, 0)  [z list, named "z"]
+
+RP_iter_2:
+- dlistrep_shape(y_320, y_309)  [rest of x list, which in program terms is dlistrep_shape(u, t)]
+- dlistrep_shape(y_324, y_316)  [rest of y list]
+- dlistrep_shape(y_341, y_335)  [rest of z list]
+- Plus data_at nodes for the processed segment
+
+RP_iter_3:
+- dlistrep_shape(y_424, y_320)  [rest of x list, dlistrep_shape(u, t)]
+- dlistrep_shape(y_458, y_324)  [rest of y list]
+- dlistrep_shape(y_534, y_341)  [rest of z list]
+- Plus data_at nodes for the processed segment
+
+So the common/persistent structure:
+1. A dlistrep_shape for the remaining x list (starting at u, with prev t)
+2. A dlistrep_shape for the remaining y list (starting at current y, with prev 0)
+3. A dlistrep_shape for the remaining z list (starting at current z, with prev 0)
+4. The processed prefix from x to the node before u
+
+Let me look at what stays the same:
+
+In all three RPs:
+- dlistrep_shape(something_u, something_t) — the remaining x list: dlistrep_shape(u, t)
+- dlistrep_shape(something_y, 0) — the remaining y list: dlistrep_shape(y, 0)
+- dlistrep_shape(something_z, 0) — the remaining z list: dlistrep_shape(z, 0)
+
+But what about x->prev = 0 and the processed segment?
+
+In RP_pre_loop, the processed segment is just x (the first node), which is data_at(&(x@pre->next), y_309) * data_at(&(x@pre->prev), 0).
+
+In RP_iter_2, the processed segment is x -> y@pre -> z@pre, which is three nodes. It's not a simple dlistrep because it doesn't go to null.
+
+In RP_iter_3, the processed segment is even longer.
+
+So the invariant needs:
+1. A dllseg for the processed prefix from x (head, prev 0) to the node before t
+2. A dlistrep for what starts at t
+
+Wait, actually let me think about this differently. In the original program:
+- x is the head of the list, x->prev = 0
+- The loop traverses the x list, splicing in nodes from y and z
+- At any point, the list looks like: x -> ... -> (spliced y/z nodes) -> (remaining x nodes)
+
+The invariant state is:
+- `dllseg_shape(x, 0, t, u)` for the processed prefix (from x to current t, u is the next node)
+- `dlistrep_shape(u, t)` for the remaining x list
+- `dlistrep_shape(y, 0)` for the remaining y list
+- `dlistrep_shape(z, 0)` for the remaining z list
+
+Where:
+- dllseg_shape(x, 0, t, u): segment from x (prev=0) to where t is the last node in the segment, u is the end marker
+- dlistrep_shape(u, t): list starting at u (prev=t), rest of original x
+
+Let me verify with RP_pre_loop:
+In RP_pre_loop, the entire "processed prefix" is just x@pre (the first node). t = x@pre, u = y_309 = x@pre->next.
+- dllseg_shape(x@pre, 0, x@pre, y_309) would be a segment from x@pre (prev=0) to x@pre (last node), end marker y_309.
+  But wait, for dllseg_shape(x, xp, yp, y):
+  - If x == y and xp == yp, it's emp (the empty case): `(x == y && xp == yp && emp)`
+  - So dllseg_shape(x@pre, 0, x@pre, y_309) where x == yp (both x@pre) and xp != y (0 != y_309)
+  - Actually the expansion: `exists z, data_at(field_addr(x, next), z) * data_at(field_addr(x, prev), xp) * dllseg_shape(z, x, yp, y)`
+  - So `dllseg_shape(x@pre, 0, x@pre, y_309)` unfolds to:
+    - `exists z, data_at(&(x@pre->next), z) * data_at(&(x@pre->prev), 0) * dllseg_shape(z, x@pre, x@pre, y_309)`
+  - For dllseg_shape(z, x@pre, x@pre, y_309), we have z == x@pre and x@pre == yp, but xp (= x@pre) != y (= y_309)... Wait, the base case is `(x == y && xp == yp && emp)`, so x (= z) == y (= y_309)? No, y = y_309, not x@pre.
+  
+  Actually, I think the base case is: `(x == y && xp == yp)` meaning the segment is empty when the start equals the end marker and the start's prev equals the end marker's prev. But here y (end marker) is y_309 = x->next, which is NOT equal to x (segment start). So the non-empty case applies.
+  
+  Hmm, I think I need to reconsider. The dllseg_shape parameters are:
+  - x: segment start
+  - xp: x's prev pointer
+  - yp: last node inside the segment  
+  - y: endpoint marker (yp->next == y, y NOT in segment)
+  
+  Wait, from the reference:
+  > dllseg_shape(x, xp, yp, y)
+  > | Param | Meaning |
+  > | x | segment start |
+  > | xp | start node's prev |
+  > | yp | last node inside the segment |
+  > | y | endpoint marker (yp->next == y, y NOT in segment) |
+  
+  And the definition:
+  `dllseg_shape(x, xp, yp, y) = (x == y && xp == yp && emp) || exists z, data_at(field_addr(x, next), z) * data_at(field_addr(x, prev), xp) * dllseg_shape(z, x, yp, y)`
+  
+  Wait, the second parameter to the recursive `dllseg_shape` is `x` not `xp`? Let me re-read...
+  
+  The expansion is: `... dllseg_shape(z, x, yp, y)` where z is x->next. So the recursive call has:
+  - x (new segment start) = z = x->next
+  - xp (new start's prev) = x (prev node)
+  - yp (last node) = yp (unchanged)
+  - y (endpoint) = y (unchanged)
+  
+  So dllseg_shape(x@pre, 0, x@pre, y_309) would need to satisfy:
+  - First iteration: `exists z, data_at(&(x@pre->next), z) * data_at(&(x@pre->prev), 0) * dllseg_shape(z, x@pre, x@pre, y_309)`
+  - Second iteration: `dllseg_shape(y_309, x@pre, x@pre, y_309)` — here x == yp == x@pre, but xp (= x@pre) != y (= y_309). The base case is `x == y` which requires y_309 == y_309 (true) AND `xp == yp` which requires x@pre == x@pre (true). So x == y_309 doesn't hold because x is y_309 and y is y_309? No wait...
+
+Let me re-trace:
+- dllseg_shape(y_309, x@pre, x@pre, y_309)
+  - x = y_309, xp = x@pre, yp = x@pre, y = y_309
+  - Base case: x == y? y_309 == y_309? YES. xp == yp? x@pre == x@pre? YES.
+  - So the base case matches! dllseg_shape(y_309, x@pre, x@pre, y_309) = emp
+
+So dllseg_shape(x@pre, 0, x@pre, y_309) = data_at(&(x@pre->next), y_309) * data_at(&(x@pre->prev), 0) * emp
+
+Which is exactly: data_at(&(x@pre->next), y_309) * data_at(&(x@pre->prev), 0)
+
+So this matches RP_pre_loop! The dllseg correctly describes the processed prefix.
+
+For RP_iter_2, the processed prefix is x -> y@pre -> z@pre, where t = y_309 (= the next node after z@pre, which is the first node of the remaining x list).
+
+Hmm wait, in RP_iter_2, t = y_309 (the variable t now points to y_309). So:
+- dllseg_shape(x@pre, 0, z@pre, y_309): segment from x (prev 0) to z@pre (last node in segment), with y_309 as the end marker
+  - This unfolds to:
+    - data_at(&(x@pre->next), y@pre) * data_at(&(x@pre->prev), 0) *
+      dllseg_shape(y@pre, x@pre, z@pre, y_309)
+  - dllseg_shape(y@pre, x@pre, z@pre, y_309):
+    - data_at(&(y@pre->next), z@pre) * data_at(&(y@pre->prev), x@pre) *
+      dllseg_shape(z@pre, y@pre, z@pre, y_309)
+  - dllseg_shape(z@pre, y@pre, z@pre, y_309):
+    - x = z@pre, y = y_309. x != y, so non-empty case:
+    - data_at(&(z@pre->next), y_309) * data_at(&(z@pre->prev), y@pre) *
+      dllseg_shape(y_309, z@pre, z@pre, y_309)
+  - dllseg_shape(y_309, z@pre, z@pre, y_309):
+    - x = y_309, y = y_309. x == y. xp = z@pre, yp = z@pre. xp == yp.
+    - Base case: emp.
+
+So the full expansion:
+data_at(&(x@pre->next), y@pre) *
+data_at(&(x@pre->prev), 0) *
+data_at(&(y@pre->next), z@pre) *
+data_at(&(y@pre->prev), x@pre) *
+data_at(&(z@pre->next), y_309) *
+data_at(&(z@pre->prev), y@pre) *
+emp
+
+This matches the SEP items in RP_iter_2 for the x, y@pre, z@pre section!
+
+Now, the remaining parts in RP_iter_2:
+- dlistrep_shape(y_309, z@pre?) — no: looking at the SEP, it's `dlistrep_shape(y_320, y_309)`. Wait but y_320 is u (the next node to process). And t = y_309.
+
+Hmm, let me look more carefully. At RP_iter_2, t = y_309 and u = y_320. But the remaining x list is dlistrep_shape(y_320, y_309) = dlistrep_shape(u, t). Wait, does dlistrep_shape(u, t) make sense?
+
+dlistrep_shape(y_320, y_309) means a dlist starting at y_320 with prev pointer y_309. And y_309->next = y_320 (from data_at(&(y_309->next), y_320)). So this is a proper doubly-linked continuation.
+
+But wait, the program variable `t` now has value y_309, and `u` has value y_320. So:
+- The processed segment is `dllseg_shape(x, 0, t, u)` where:
+  - segment start = x = x@pre
+  - xp = 0
+  - yp, the last node in segment... Hmm, what's the last node in the segment here?
+  
+At RP_iter_2, t = y_309 and u = y_320. The processed segment goes x -> y@pre -> z@pre. The last node IN the segment is z@pre. And z@pre->next = y_309 = t... but t is NOT the end marker here. The end marker should be u = y_320.
+
+Wait, but t->next = u, so if t = y_309, then u = y_320 = y_309->next. So the segment goes x -> y@pre -> z@pre -> y_309, and y_309->next = y_320 = u.
+
+In the RP, the `data_at` for (&(z@pre->next), y_309) tells us z@pre->next = y_309 (= t). And t->next = u.
+
+So the segment includes: x -> y@pre -> z@pre -> y_309 (= t). The end marker is u (= y_320 = t->next). But t is INSIDE the segment? That means:
+- dllseg_shape(x, 0, t, u) where t is the LAST node in the segment and u is the end marker.
+- x = x@pre, xp = 0, yp = t = y_309, y = u = y_320
+
+dllseg_shape(x@pre, 0, y_309, y_320):
+- data_at(&(x@pre->next), y@pre) * data_at(&(x@pre->prev), 0) * dllseg_shape(y@pre, x@pre, y_309, y_320)
+- ... expands to include y@pre and z@pre nodes ...
+- eventually: data_at(&(y_309->next), y_320) * data_at(&(y_309->prev), z@pre) * dllseg_shape(y_320, y_309, y_309, y_320)
+- dllseg_shape(y_320, y_309, y_309, y_320): x = y_320, y = y_320, xp = y_309, yp = y_309. x == y and xp == yp. Base case: emp.
+
+So dllseg_shape(x@pre, 0, y_309, y_320) expands to include all the data_at nodes for x, y@pre, z@pre, y_309.
+
+But this doesn't match! In RP_iter_2, the data_at for (&(z@pre->next), y_309) means z@pre->next = y_309, and DATA_AT for (&(y_309->next), y_320) means y_309->next = y_320. But dllseg_shape(x, 0, y_309, y_320) would include y_309 as the LAST node in the segment, which would mean z@pre->next = y_309 is part of the segment.
+
+Actually wait, let me re-check. In the dllseg expansion, the segment goes from x (segment start) to y (end marker). The last node IN the segment has ->next pointing to y. So if y = y_320, then y_309->next = y_320, meaning y_309 IS the last node in the segment. And z@pre->next = y_309, which means z@pre->next points to y_309, and y_309 is in the segment (as the last node).
+
+So dllseg_shape(x@pre, 0, y_309, y_320) means:
+- Segment: x -> y@pre -> z@pre -> y_309 (t)
+- End marker: y_320 (u)
+- The last node in the segment (yp) = y_309 = t
+- End marker (y) = y_320 = u
+
+And then the remaining x list is dlistrep_shape(y_320, y_309) = dlistrep_shape(u, t).
+
+But wait, for RP_pre_loop:
+- t = x@pre, u = y_309 (= x@pre->next)
+- dllseg_shape(x@pre, 0, x@pre, y_309) = data_at(&(x@pre->next), y_309) * data_at(&(x@pre->prev), 0) * emp
+
+This matches! The segment is just x@pre (single node), and the end marker is y_309 = u.
+
+And the remaining x list is dlistrep_shape(y_309, x@pre) = dlistrep_shape(u, t).
+
+For RP_iter_3:
+Looking at the SEP, t = y_320, u = y_424. And we can see data_at(&(y_320->next), y_424). So:
+- dllseg_shape(x@pre, 0, y_320, y_424) for the processed segment
+- dlistrep_shape(y_424, y_320) = dlistrep_shape(u, t) for the remaining x list
+
+For y and z in RP_iter_2:
+- y_316 is the remaining y head, with y_316->prev = 0 and y_316->next = y_324
+- The variable `y` (stored at y_287_addr) has value y_316
+- dlistrep_shape(y_324, y_316) is the rest
+- But actually the full remaining y list is dlistrep_shape(y_316, 0) ... but we don't have that predicate directly. What we have is:
+  - data_at(&(y_316->next), y_324)
+  - data_at(&(y_316->prev), 0)
+  - dlistrep_shape(y_324, y_316)
+  
+This IS the full expansion of the first node of dlistrep_shape(y_316, 0). So the remaining y list is dlistrep_shape(y_316, 0) but it's been unfolded one level.
+
+Similarly for z in RP_iter_2:
+- z = y_335 (after advancing)
+- data_at(&(y_335->next), y_341)
+- data_at(&(y_335->prev), 0)
+- dlistrep_shape(y_341, y_335)
+This is dlistrep_shape(y_335, 0) unfolded one level.
+
+So in the invariant, we should write:
+- dllseg_shape(x, 0, t, u) for the processed segment
+- dlistrep_shape(u, t) for the remaining x list
+- dlistrep_shape(y, 0) for the remaining y list
+- dlistrep_shape(z, 0) for the remaining z list
+
+Where x = variable x, t = variable t, u = variable u, y = variable y, z = variable z.
+
+Now let me check PROP constraints:
+
+RP_pre_loop PROP: x@pre != 0
+RP_iter_2 PROP: y_309 != 0, x@pre != 0, y@pre != 0, y_316 != 0, z@pre != 0, y_335 != 0
+RP_iter_3 PROP: y_320 != 0, y_309 != 0, x@pre != 0, y@pre != 0, y_316 != 0, z@pre != 0, y_335 != 0, y_316 != 0 (dup), y_324 != 0 (dup), y_335 != 0 (dup), y_341 != 0
+
+Let me think about what common PROP constraints we need:
+
+1. x != 0 — appears in all RPs. This is from the guard `if (x == 0) return;` at the beginning.
+
+2. t != 0 — In RP_pre_loop, t = x, and x != 0, so t != 0 holds. In RP_iter_2, t = y_309 and y_309 != 0 (from PROP). In RP_iter_3, t = y_320 and y_320 != 0. So t != 0 holds in all RPs.
+
+3. u != 0 — The loop condition is `while (u)`, so at the loop head (before the check), u may or may not be non-null. But since we're still in the loop, u != 0. However, for invariant purposes, we need to check each RP. But wait, the invariant holds at the loop HEAD (before the condition check), and the loop only continues if u != 0. So at iteration start, u != 0.
+
+   In RP_pre_loop: u = y_309 and there's no explicit `y_309 != 0` in PROP. So u might be 0. But if u = 0, the loop doesn't execute at all.
+   
+   Hmm, but the RP_pre_loop is the state BEFORE the first `if (cond && in_loop)` check. So at this point, u could be 0 (the loop would then be skipped). But RP_iter_2 would only be reached if u != 0 in the first iteration. Since we have RP_iter_2, we know that in this particular execution path, u was non-null in iteration 1.
+   
+   For RP_pre_loop, the PROP doesn't have `u != 0` explicitly. But x@pre != 0, and we know t = x, and we only enter the while loop body if u = t->next != 0. But the invariant holds at the loop head, which is before the condition check. If u = 0, the loop exits and the invariant still holds (it's just a vacuous case).
+
+   So in the invariant, we might need u != 0 since the loop only continues when u is non-null. But actually, the invariant should hold at EVERY loop head, including when u = 0 (the loop would exit). When u = 0, dlistrep_shape(u, t) = dlistrep_shape(0, t) which is empty (since 0 == 0 && emp).
+
+   But for the loop body to execute (which is what the verification cares about), u != 0. The PROP items are constraints on the state. If u = 0, the body isn't entered, so the invariant doesn't need the `u != 0` constraint — it's implied by the loop guard.
+
+   Actually, looking at the SKILL.md section 2.5: "Non-null from branch guards: Read the code before the loop. If the loop is only reachable under a condition, add the implied non-null constraints to PROP."
+
+   So:
+   - x != 0: from the `if (x == 0) return;` guard before the loop
+   - t != 0: from the assignment `t = x` and `x != 0`
+   - u != 0: from the while loop condition; but since this is checked by the loop itself, we might not need it in the invariant
+
+Let me also check what the loop body accesses:
+- t->next: dereferences t
+- u->prev: dereferences u
+- y->next: dereferences y (if y branch taken)
+- z->next: dereferences z (if z branch taken)
+
+So we need `has_permission` for:
+- t: appears in dllseg_shape (the first argument, which is x, not t directly). But t does not appear as arg[0] of any SEP predicate... Actually, in the dllseg, t would be the `yp` parameter, not the start. And in dlistrep_shape(u, t), t is the second parameter (prev pointer), not the first.
+
+Wait, let me reconsider. The invariant would be:
+```
+dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t) * dlistrep_shape(y, 0) * dlistrep_shape(z, 0)
+```
+
+Here:
+- x appears as arg[0] of dllseg_shape ✓
+- t appears as arg[2] of dllseg_shape and arg[1] of dlistrep_shape — not as arg[0] of any predicate
+- u appears as arg[0] of dlistrep_shape ✓
+- y appears as arg[0] of dlistrep_shape ✓
+- z appears as arg[0] of dlistrep_shape ✓
+
+But the loop body accesses `t->next` and `u->prev`. For `t->next`, the strategies can only unfold from arg[0] of a shape predicate or dlistrep_shape. Since t is not arg[0], strategies can't unfold t.
+
+So we need to restructure the invariant to make t accessible. The key issue: the loop body does `t->next = u` (or `t->next = y`, `t->next = z`), so t must be directly accessible.
+
+Actually, wait. Looking at the dllseg unfolding more carefully. In the dllseg definition:
+`dllseg_shape(x, xp, yp, y) = (x == y && xp == yp && emp) || exists z, data_at(field_addr(x, next), struct list*, z) * data_at(field_addr(x, prev), struct list*, xp) * dllseg_shape(z, x, yp, y)`
+
+When strategies unfold dllseg_shape, they work from the first argument (x). They unfold x's next and prev pointers. But the loop body accesses t->next, and t is NOT the first argument of any predicate!
+
+Hmm, let me think about this more carefully. The loop body does:
+1. `t->next = y` (or `t->next = z` or `t->next = u`)
+2. `u->prev = t` (or y->prev/t, z->prev/t)
+3. `u = u->next`
+
+At the end of each iteration: `t = u; u = u->next;`
+
+So t and u change each iteration. In the dllseg/dlistrep decomposition:
+- dllseg_shape(x, 0, t, u): the processed prefix from x to t (t is last, u is end marker)
+- dlistrep_shape(u, t): the remaining x list starting at u
+
+When entering the loop body (at the loop head):
+- The state has dlistrep_shape(u, t) — strategies can unfold from u's next/prev
+- But the loop body also does `t->next = ...` — dereferences t!
+
+Ah, but t is the SECOND ARGUMENT of dlistrep_shape(u, t), which is t = prev of u. The dlistrep_shape strategy should be able to unfold u's prev and next pointers, which would give us access to t through `data_at(&(u->prev), struct list*, t)`.
+
+Wait no, the strategy unfolds from the FIRST argument. dlistrep_shape(u, t) starts at u. The unfold would give:
+- `data_at(&(u->next), some_val) * data_at(&(u->prev), t) * dlistrep_shape(some_val, u)`
+
+So from unfolding dlistrep_shape(u, t), we get `data_at(&(u->prev), t)`, which gives us the address of u->prev. But we also need `data_at(&(t->next), ...)` — the next field of t.
+
+Hmm, but t is the second argument (the prev pointer of u). The strategy can unfold starting from u, which gives u->prev and u->next. But it can't unfold t directly because t is not the first argument of any predicate.
+
+Actually, looking at the dllseg unfolding more carefully. When the invariant is `dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t)`, the dllseg unfolds from x (first arg). We need to reach the end of the segment to access t.
+
+For the loop body to work:
+- `t->next` needs to be accessible
+- `u->prev` needs to be accessible
+
+From the dlistrep_shape(u, t), strategies can unfold u:
+- `data_at(&(u->next), some_next) * data_at(&(u->prev), t) * dlistrep_shape(some_next, u)`
+
+This gives us u->prev (= t) and u->next. Good.
+
+But we also need t->next. How? From the dllseg unfolding:
+- `dllseg_shape(x, 0, t, u)` with t being the yp (last node inside the segment)
+- Unfolding from x... eventually reaches t
+
+From the dllseg_shape definition, when we unfold until we reach `dllseg_shape(t, some_prev, t, u)`:
+- `data_at(&(t->next), u) * data_at(&(t->prev), some_prev) * dllseg_shape(u, t, t, u)`
+- And `dllseg_shape(u, t, t, u)` should be emp because x = y (= u) and xp = yp (= t)
+
+So unfolding dllseg_shape(x, 0, t, u) should eventually produce `data_at(&(t->next), u)`, which gives us access to t->next!
+
+But this requires QCP's strategies to unfold the entire dllseg until reaching t. The dll_nodata strategies should support this since the dllseg is defined recursively.
+
+OK, so the invariant structure seems correct. Let me also think about whether we need `has_permission`.
+
+The loop body accesses:
+1. `t->next` (write): t is arg[2] of dllseg, not arg[0]. But through dllseg unfolding, we get `data_at(&(t->next), u)` — so it IS covered.
+2. `u->prev` (write): u is arg[0] of dlistrep, so unfolding gives `data_at(&(u->prev), t)`.
+3. `y->next` (read): y is arg[0] of dlistrep(y, 0), so unfolding gives access.
+4. `z->next` (read): z is arg[0] of dlistrep(z, 0), so unfolding gives access.
+5. `y->prev` (write): from dlistrep(y, 0) unfolding.
+6. `z->prev` (write): from dlistrep(z, 0) unfolding.
+7. `u = u->next` (read): u is arg[0] of dlistrep.
+
+So actually, all pointers are covered by the dlistrep or dllseg predicates. No `has_permission` needed.
+
+But wait — `t` itself is a pointer that is dereferenced. But `t` is not arg[0] of any predicate. Through dllseg unfolding reaching the last node, we get t->next. But the dllseg is unfolding from x, not from t.
+
+I think the key insight is that when QCP unfolds dllseg_shape(x, 0, t, u), it starts from x and eventually unfolds to get the data_at for the last node's next field, which is `data_at(&(t->next), u)`. This gives QCP the permission to write to t->next.
+
+But there's a subtle issue: `t` is a local variable that changes. At each iteration, t points to a different node. The dllseg is defined in terms of x (the head), which stays constant. As the loop advances, more nodes move from dlistrep_shape(u, t) to the dllseg.
+
+Actually, I realize the invariant needs to be written with program variable names, not QCP internal names. Let me write the invariant:
+
+```
+/*@ Inv Assert 
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0) *
+    dlistrep_shape(z, 0)
+ */
+```
+
+Wait, but I should also check the PROP constraints. From the RPs:
+
+RP_pre_loop PROP: x@pre != 0
+RP_iter_2 PROP: y_309 != 0, x@pre != 0, y@pre != 0, y_316 != 0, z@pre != 0, y_335 != 0
+RP_iter_3 PROP: y_320 != 0, y_309 != 0, x@pre != 0, y@pre != 0, y_316 != 0, z@pre != 0, y_335 != 0, y_324 != 0, y_341 != 0
+
+The common PROP constraint across all RPs is just `x != 0` (or `x@pre != 0`).
+
+But per section 2.5, we need to add additional PROP constraints from the code:
+- x != 0: from the `if (x == 0) return;` guard
+- t != 0: from `t = x` and x != 0
+- u != 0: this is the loop guard, but it's already implied by the loop condition... Actually, since the loop can exit when u = 0, the invariant should hold both when u = 0 and u != 0. At the loop head, if u = 0, the invariant still holds but the loop body doesn't execute.
+
+Wait, but for verification, the invariant needs to hold at all loop heads (including when u = 0). When u = 0:
+- dlistrep_shape(0, t) = emp (0 && emp)
+- dllseg_shape(x, 0, t, 0) would mean the segment from x to 0? No, if u = 0, then dlistrep_shape(0, t) is emp. And dllseg_shape(x, 0, t, 0) would have end marker 0. t would be the last node in the segment.
+
+But this doesn't match the code! If u = 0, it means we've reached the end of the original x list. t points to the last node of the original x list. At the exit, the code does `u = merge(y,z); t->next = u;`.
+
+So the invariant should hold both when u = 0 and u != 0.
+
+For PROP: x != 0, t != 0 are always true when we're in the loop.
+
+Actually, let me re-think. The invariant should be:
+```
+x != 0 &&
+dllseg_shape(x, 0, t, u) *
+dlistrep_shape(u, t) *
+dlistrep_shape(y, 0) *
+dlistrep_shape(z, 0)
+```
+
+When u = 0:
+- dlistrep_shape(0, t) = emp (the base case of dlistrep)
+- dllseg_shape(x, 0, t, 0): segment from x (prev 0) to t, with end marker 0
+  - This should be: everything from x to t, and t->next = 0 (end marker)
+  - Unfolding dllseg_shape(x, 0, t, 0): 
+    - Eventually: dllseg_shape(t, prev, t, 0)
+    - x (= t), y (= 0): x != y, so non-empty case applies
+    - data_at(&(t->next), 0) * data_at(&(t->prev), prev) * dllseg_shape(0, t, t, 0)
+    - dllseg_shape(0, t, t, 0): x = 0, y = 0, xp = t, yp = t. x == y, xp == yp. Base case: emp.
+    
+Wait, but 0 == 0 is true and t == t is true. So the base case matches: emp. And we get `data_at(&(t->next), 0)` which is correct (the last node's next is 0).
+
+OK, this all checks out. Let me also think about whether I need to add more PROP constraints.
+
+From the loop body analysis (SKILL.md 2.5):
+- Non-null: x != 0, t != 0 — these are the implied non-null constraints from the entry condition
+- Invariant equalities: t is updated at the end: `t = u; u = u->next;`
+  - So `t == old_u` is not stable across iterations
+  - At loop head, t is the previous u, and u is the next node
+  - No stable equalities for pointer variables beyond the structure described by the shape predicates
+
+Actually, looking at section 2.5 more carefully: "If the loop body contains an assignment and the assigned variable is not modified again in the same iteration, the equality holds across iterations."
+
+In the loop body, the key assignments are:
+- t = y/z/u (at various points) — t changes each iteration
+- u = u->next — u changes each iteration
+- y = y->next — y changes each iteration (in the if (y) branch)
+- z = z->next — z changes each iteration (in the if (z) branch)
+
+None of these hold across iterations because they're all modified.
+
+So PROP is just: `x != 0` (and maybe `t != 0`).
+
+Hmm, actually, looking at the PROP more carefully. In RP_pre_loop, the PROP only has `x@pre != 0`. But `x@pre != 0` in the invariant translates to `x != 0`.
+
+But what about `t != 0`? In RP_pre_loop, t = x@pre, and x@pre != 0, so t != 0 holds. In RP_iter_2, t = y_309 and y_309 != 0 (from PROP). In RP_iter_3, t = y_320 and y_320 != 0 (from PROP). So t != 0 holds in all RPs.
+
+However, the PROP in RP_pre_loop only explicitly has `x@pre != 0`. The constraint `t != 0` is implicit (t = x). Should I add it to the invariant?
+
+Per SKILL.md 2.5: "Non-null from branch guards: Read the code before the loop. If the loop is only reachable under a condition, add the implied non-null constraints to PROP."
+
+The code before the loop:
+```
+t = x;
+u = t->next;
+/* INFILL */
+while (u) {
+```
+
+The `if (x == 0) return;` guard ensures x != 0 when reaching the loop. So `x != 0` and `t != 0` (since t = x) are both implied.
+
+Let me add both: `x != 0 && t != 0`.
+
+OK wait, now I need to also check for the `dup_data_at_error` issue. Looking at the invariant:
+
+```
+x != 0 && t != 0 &&
+dllseg_shape(x, 0, t, u) *
+dlistrep_shape(u, t) *
+dlistrep_shape(y, 0) *
+dlistrep_shape(z, 0)
+```
+
+The issue is whether dllseg_shape(x, 0, t, u) and dlistrep_shape(u, t) create overlapping data_at nodes.
+
+- dllseg_shape(x, 0, t, u): segment from x (prev=0) to t (last node), with u as end marker
+- dlistrep_shape(u, t): list starting at u (prev=t)
+
+When dllseg unfolds, the last node in the segment is t, and the unfold gives `data_at(&(t->next), u)` (since t's next is u, the end marker). Also gives `data_at(&(t->prev), prev_value)`.
+
+When dlistrep_shape(u, t) unfolds from u, it gives `data_at(&(u->prev), t)` and `data_at(&(u->next), ...)`.
+
+Since dlistrep_shape starts at u and the dllseg ends at t (with u as end marker), there's no overlap. The segment covers nodes x through t, and the dlistrep covers nodes starting from u. Since t != u†, there's no overlap.
+
+† Wait, is it possible that t == u? Only if the segment is empty, which happens when x == u. But if x == u, then the dllseg is empty and dlistrep_shape(x, t) covers everything. But t = x, so dlistrep_shape(u, t) = dlistrep_shape(x, x). This is fine since dlistrep_shape(x, x) would be... hmm, dlistrep_shape(l, p) starts at l with prev p. If x != 0, then dlistrep_shape(x, x) means a list starting at x with prev x, which is invalid. But t = x and u = x would only happen if the original x list had only one node (x->next = 0), and then the while loop doesn't execute.
+
+Actually, thinking about it more carefully:
+- x = t at the start (RP_pre_loop). We enter the loop if u = x->next != 0. So t = x, u = x->next. t != u.
+- After one iteration, t = u (from `t = u`), u = u->next. So t has advanced.
+
+The dllseg and dlistrep properly partition the list: dllseg covers nodes from x to t (t is the last node in the segment), and dlistrep covers from u (which is t->next, the end marker).
+
+For RP_pre_loop:
+- dllseg_shape(x, 0, t, u) = dllseg_shape(x, 0, x, u) where x != u
+- = data_at(&(x->next), u) * data_at(&(x->prev), 0) * dllseg_shape(u, x, x, u)
+- dllseg_shape(u, x, x, u): x == y (= u)... no, x (= u), y (= u), so x == y. xp (= x) == yp (= x). Base case: emp.
+
+So dllseg_shape(x, 0, x, u) = data_at(&(x->next), u) * data_at(&(x->prev), 0)
+
+And dlistrep_shape(u, t) = dlistrep_shape(u, x): list starting at u with prev x.
+
+In RP_pre_loop, the SEP shows:
+- data_at(&(x@pre->next), y_309) where y_309 = u
+- data_at(&(x@pre->prev), 0)
+- dlistrep_shape(y_309, x@pre) where y_309 = u, x@pre = t
+
+So the dllseg gives us `data_at(&(x->next), u) * data_at(&(x->prev), 0)` and the dlistrep gives us `dlistrep_shape(u, t)`. But the dllseg also includes a `dllseg_shape(u, x, x, u)` which is emp. So there's no overlap since the dlistrep starts at u and the dllseg contains data_at for x, not u.
+
+This looks correct! No overlap.
+
+Let me now write the invariant and run verification.
+
+Actually, I also need to check one more thing. The post-loop code:
+
+```c
+u = merge(y,z);
+t -> next = u;
+if (u) {
+    u -> prev = t;
+}
+return x;
+```
+
+After the loop (when u = 0), the invariant has:
+- dllseg_shape(x, 0, t, 0): all original x nodes from x to t, with t->next = 0
+- dlistrep_shape(y, 0)
+- dlistrep_shape(z, 0)
+
+Then the post-loop code calls `merge(y, z)` which consumes y and z and returns a merged list. Then it appends the merged list to t.
+
+But since I'm using `--ensure-emp` for... wait, actually the symexec that succeeded was without `--ensure-emp`. But I'll need to verify with the invariant, which means using the original code (with INFILL replaced by the invariant).
+
+Actually, SKILL.md says to use `--ensure-emp` when unrolling but the verification step (step 3.2) doesn't mention it. Let me re-read.
+
+Step 3.2:
+```
+<SKILL_DIR>/scripts/symexec \
+  --goal-file=<SKILL_DIR>/tmp/<name>_goal.v \
+  ...
+  --input-file=<SKILL_DIR>/tmp/<name>_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee <SKILL_DIR>/tmp/<name>_verify.log
+```
+
+No `--ensure-emp`. But the verification file is generated from the original input file with INFILL replaced by the invariant. So the merge spec is preserved.
+
+But wait, looking at the verification flow:
+1. The verification file has the invariant inserted (replacing `/* INFILL */`).
+2. The original merge spec is intact.
+3. symexec verifies the function with the invariant.
+
+Since the merge function call is inside the loop body and after it, the symexec needs to handle it. With the full spec (dlistrep_shape(__return, x_prev)), QCP should be able to verify the function calls.
+
+But maybe the issue is QCP can't symbolically execute the merge call because it's a separate function without a body? Well, QCP should be able to use the function's specification (Require/Ensure) to handle the call.
+
+Actually, looking at the fatal error earlier: "with variable (id = 12699) not instantiated". This error happened on the merge call at line 164 (post-loop). But the symexec without `--ensure-emp` succeeded (the log was generated).
+
+Wait, did it succeed? The log ended with `End` but didn't have "Successfully finished symbolic execution". Let me check again.
+
+Actually, I think the symexec needs the full function body to handle function calls. When using only the spec, it can't handle calls to `merge` unless it can inline the body. The `--ensure-emp` flag helps for verification of the unrolled code (since it makes the function calls consume the resources and return emp), but it creates issues when the return value is used.
+
+For verification (step 3), the file has the invariant in place and symexec runs against it. But the same merge function issue would arise.
+
+Hmm, let me think about this differently. For verification, QCP would:
+1. Apply the invariant at the loop head
+2. Verify the invariant holds for the first iteration (entry)
+3. Verify the invariant is preserved by each iteration
+4. Verify the exit condition implies the postcondition
+
+For steps 2-3, QCP symbolically executes the loop body with the invariant as precondition and checks if the invariant holds after. The loop body contains merge function calls which need to be handled.
+
+But QCP might be able to handle function calls with just the spec through a mechanism like "function frame rule" or "specification-based verification." Let me just try and see.
+
+Actually, I just realized: the original input file has merge declared as a function with a spec. QCP should be able to use this spec for verification. The symexec is designed to handle this kind of function call.
+
+Let me just write the invariant and verify it. If it fails, I'll debug.
+
+Let me write the invariant now:
+
+```c
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0) *
+    dlistrep_shape(z, 0)
+ */
+```
+
+Wait, I also need to think about the PROP constraints more carefully. In RP_pre_loop, the PROP only has `x@pre != 0`. But in RP_iter_2 and RP_iter_3, there are more constraints. I'm adding `t != 0` which holds in all RPs implicitly (t = x in RP_pre_loop, and t = some non-null value in later iterations).
+
+But actually, does `t != 0` hold at every loop head? In RP_pre_loop, t = x@pre = x. Since x != 0, t != 0. In RP_iter_2, t = y_309. From PROP, y_309 != 0, so t != 0. In RP_iter_3, t = y_320, and y_320 != 0 from PROP. So yes, t != 0 holds at every loop head.
+
+What about u? u != 0 is the loop condition. If u = 0, the loop exits. At the loop head, u might be 0 (exit path). Since we're verifying the invariant, u != 0 is not necessarily part of the invariant.
+
+OK, let me now write the verification file.
+
+Actually wait, I need to re-read the original file to create the inv file properly.
+
+The original file has `/* INFILL */` at line 22. I need to replace it with the invariant.
+
+Let me create the verification file.
+
+[TEXT]
+We have recording points. Let me now read the original input file and analyze the loop to infer the invariant.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c
+
+============================================================
+[THINKING] (4168 chars)
+============================================================
+OK, I have all the info I need. Let me create the verification file with the invariant and run the verification.
+
+Let me write the invariant:
+
+From my analysis:
+- The loop iterates through the x list, splicing in nodes from y and z
+- Key invariant: `dllseg_shape(x, 0, t, u) * dlistrep_shape(u, t) * dlistrep_shape(y, 0) * dlistrep_shape(z, 0)`
+- PROP: `x != 0 && t != 0`
+
+Wait, I realize I should double-check my analysis by looking at the actual RP states more carefully.
+
+In RP_pre_loop:
+- t_298_addr has value x@pre → t = x
+- u_301_addr has value y_309 → u = x->next
+- data_at(&(x@pre->next), y_309), data_at(&(x@pre->prev), 0)
+- dlistrep_shape(y_309, x@pre)
+- dlistrep_shape(y@pre, 0), dlistrep_shape(z@pre, 0)
+
+In RP_iter_2:
+- t_298_addr has value y_309 → t = y_309 (which was previously u)
+- u_301_addr has value y_320 → u = y_309->next
+- dllseg-style data_at chain from x to z@pre to y_309
+- dlistrep_shape(y_320, y_309) → dlistrep_shape(u, t)
+- y_287_addr has value y_316 → y = remaining y list head
+- z_284_addr has value y_335 → z = remaining z list head
+- dlistrep_shape(y_324, y_316) → dlistrep_shape(y, some_next)... No.
+
+Wait, the variable `y` at RP_iter_2 has value y_316. And the PROP shows `y_316 != 0`. But the SEP shows:
+- data_at(&(y_316->next), y_324)
+- data_at(&(y_316->prev), 0)
+- dlistrep_shape(y_324, y_316)
+
+This is `dlistrep_shape(y_316, 0)` unfolded one level. In the invariant, I'd write `dlistrep_shape(y, 0)` and strategies would fold/unfold it as needed.
+
+Similarly for z: y_335 is the value of z, and the structure is `dlistrep_shape(y_335, 0)` unfolded.
+
+So yes, the invariant `dlistrep_shape(y, 0)` and `dlistrep_shape(z, 0)` should work.
+
+Let me now create the verification file and run it.
+
+Actually, I also want to verify: In RP_iter_2, the data_at chain is:
+- data_at(&(x@pre->next), y@pre) 
+- data_at(&(x@pre->prev), 0)
+- data_at(&(y@pre->next), z@pre)
+- data_at(&(y@pre->prev), x@pre)
+- data_at(&(z@pre->next), y_309) (= u in this iteration? No, t = y_309 in iter2)
+- data_at(&(z@pre->prev), y@pre)
+- data_at(&(y_309->next), y_320)
+- ...
+
+So the "processed segment" from x to t (= y_309) includes x -> y@pre -> z@pre -> y_309.
+The "remaining list" starts at u = y_320.
+
+dllseg_shape(x, 0, y_309, y_320) where:
+- x = x@pre (segment start)
+- xp = 0 (x's prev)
+- yp = y_309 = t (last node in segment)
+- y = y_320 = u (end marker, NOT in segment)
+
+dlistrep_shape(y_320, y_309) = dlistrep_shape(u, t)
+
+dlistrep_shape(y, 0) where y = y_316
+dlistrep_shape(z, 0) where z = y_335
+
+Yes, this matches!
+
+For RP_iter_3:
+- t = y_320, u = y_424
+- The segment extends to include y_309 (which was the previous t)
+- dllseg_shape(x, 0, y_320, y_424)
+- dlistrep_shape(y_424, y_320) = dlistrep_shape(u, t)
+- dlistrep_shape(y, 0) where y = y_324
+- dlistrep_shape(z, 0) where z = y_341
+
+This also matches!
+
+OK great, the invariant structure is confirmed. Let me write it.
+
+One more check: Do I need `has_permission`?
+
+The loop body accesses:
+- t->next: written explicitly
+- y->prev, y->next: from if (y) branch
+- z->prev, z->next: from if (z) branch
+- u->prev, u->next: written/read
+
+All of these are covered by the shape predicates in the invariant:
+- t->next: covered by dllseg_shape(x, 0, t, u) (unfolding gives data_at(&(t->next), u))
+- y->prev, y->next: covered by dlistrep_shape(y, 0)
+- z->prev, z->next: covered by dlistrep_shape(z, 0)
+- u->prev, u->next: covered by dlistrep_shape(u, t)
+
+No `has_permission` needed.
+
+Wait, actually I need to think about this more carefully. The dllseg_shape(x, 0, t, u) is defined such that the last node in the segment is t, and t->next = u. But the loop body does `t->next = y` (or `t->next = z`) before doing `t->next = u` later. This means the invariant `t->next = u` from dllseg is modified during the loop body.
+
+For verification, QCP needs to:
+1. Start with the invariant (dllseg_shape(x, 0, t, u))
+2. Unfold dllseg to get data_at(&(t->next), u)
+3. Modify data_at(&(t->next), u) to data_at(&(t->next), y) etc.
+4. At the end, produce the invariant again
+
+This is standard separation logic: unfold, mutate, refold. It should work.
+
+Let me proceed with verification. Let me create the verification file.
+
+[TEXT]
+Now I have all three RPs. Let me analyze them and build the invariant.
+
+Based on diff analysis across the RPs:
+- **RP_pre_loop**: x is the first node (t=x, u=x->next), y and z lists intact
+- **RP_iter_2**: After one iteration, y's and z's heads were spliced between x and original node, remaining y/z lists exist
+- **RP_iter_3**: Same pattern advances further
+
+The invariant structure:
+- `dllseg_shape(x, 0, t, u)` — processed prefix from x (prev=0) to t (last node), u is end marker
+- `dlistrep_shape(u, t)` — remaining original x list starting at u (prev=t)
+- `dlistrep_shape(y, 0)` — remaining y list
+- `dlistrep_shape(z, 0)` — remaining z list
+- PROP: `x != 0 && t != 0`
+
+Let me create the verification file.
+
+[TOOL: Bash]
+Bash: cat /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c | sed 's|/\* INFILL \*/|/*@ Inv Assert x != 0 \&\& t != 0 \&\&\n    dllseg_shape(x, 0, t, u) *\n    dlistrep_shape(u, t) *\n    dlistrep_shape(y, 0) *\n    dlistrep_shape(z, 0)\n */|' > /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_inv.c
+
+============================================================
+[THINKING] (41 chars)
+============================================================
+Let me verify the inv file looks correct.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_inv.c
+
+============================================================
+[THINKING] (116 chars)
+============================================================
+The file looks correct. Now let me run the verification (step 3.2). First, delete old proof files, then run symexec.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v
+
+============================================================
+[THINKING] (0 chars)
+============================================================
+
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra --input-file=/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_inv.c --basic-assertion --primary-assertion 2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_verify.log
+
+============================================================
+[THINKING] (37 chars)
+============================================================
+Let me check the verification result.
+
+[TOOL: Bash]
+Bash: tail -5 /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_verify.log
+
+============================================================
+[THINKING] (116 chars)
+============================================================
+"Successfully finished symbolic execution"! Now let me check if there are any "Admitted" in the proof_manual.v file.
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v
+
+============================================================
+[THINKING] (113 chars)
+============================================================
+Zero "Admitted." entries! That means QCP_VERIFIED: YES! Let me also check for any fatal errors in the verify log.
+
+[TOOL: Bash]
+Bash: grep -i "fatal\|error" /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_verify.log | tail -5
+
+============================================================
+[THINKING] (206 chars)
+============================================================
+No fatal errors and 0 admitted. The verification was successful! Let me now write the result to result.txt and produce the output.
+
+Let me also read the proof_auto.v to check the admission count from there.
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_auto.v; grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_goal.v
+
+============================================================
+[THINKING] (402 chars)
+============================================================
+The goal.v has 0 Admitted (good - the verification goals are all proven), and the auto proof has 32 Admitted (which is for auto-generated proof steps, this is fine - the manual proof file is the one that matters).
+
+Wait, but actually the SKILL.md says to check `grep -c "Admitted\." <proof_manual.v>`. The manual proof has 0 Admitted, so QCP_VERIFIED: YES!
+
+Let me now write the result file and output.
+
+[TEXT]
+The verification succeeded: "Successfully finished symbolic execution" and 0 "Admitted" in the manual proof. Let me write the result file.
+
+[TOOL: Bash]
+Bash: cat > /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/result.txt << 'EOF'
+QCP_VERIFIED: YES
+
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list *merge(struct list *x , struct list *y)
+/*@ With x_prev 
+    Require dlistrep_shape(x,x_prev) * dlistrep_shape(y,0)
+    Ensure  dlistrep_shape(__return,x_prev)
+ */;
+
+struct list *multi_merge(struct list *x , struct list *y, struct list *z)
+/*@ Require dlistrep_shape(x,0) * dlistrep_shape(y,0) * dlistrep_shape(z,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+{
+    struct list *t,*u;
+    if (x == 0) {
+      t = merge(y,z);
+      return t; 
+    }
+    else {
+      t = x;
+      u = t->next;
+      /*@ Inv Assert x != 0 && t != 0 &&
+          dllseg_shape(x, 0, t, u) *
+          dlistrep_shape(u, t) *
+          dlistrep_shape(y, 0) *
+          dlistrep_shape(z, 0)
+       */
+      while (u) {
+        if (y) {
+          t -> next = y;
+          y -> prev = t;
+          t = y;
+          u -> prev = t;
+          y = y -> next;
+          if (y) {
+            y -> prev = 0;
+          }    
+        }
+        else {
+          u = merge(u , z);
+          t -> next = u;
+          return x;   
+        }
+        if (z) {
+          t -> next = z;
+          z -> prev = t;
+          t = z;
+          u -> prev = t;
+          z = z -> next;
+          if (z) {
+            z -> prev = 0;
+          }
+        }
+        else {
+          u = merge(u , y);
+          t -> next = u;
+          return x;
+        }
+        t -> next = u;
+        u -> prev = t;
+        t = u;
+        u = u -> next;
+      }
+  }
+  u = merge(y,z);
+  t -> next = u;
+  if (u) {
+    u -> prev = t;
+  }
+  return x;
+}
+```
+EOF
+
+============================================================
+[THINKING] (52 chars)
+============================================================
+Let me verify the result file was written correctly.
+
+[TOOL: Bash]
+Bash: ls -la /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/result.txt /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/multi_merge_states.txt /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_inv.c /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_verify.log /home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v
+
+============================================================
+[THINKING] (829 chars)
+============================================================
+All files are in place. The task is complete. Let me summarize what was done.
+
+The invariant I inferred:
+```
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0) *
+    dlistrep_shape(z, 0)
+ */
+```
+
+This captures the loop's behavior:
+- `dllseg_shape(x, 0, t, u)`: the processed prefix from x (prev=0) through all spliced-in nodes up to t (the current end of the processed segment), with u as the next node to process (end marker)
+- `dlistrep_shape(u, t)`: the remaining unprocessed suffix of the original x list
+- `dlistrep_shape(y, 0)` and `dlistrep_shape(z, 0)`: the remaining y and z lists (nodes not yet spliced in)
+- `x != 0 && t != 0`: essential non-null constraints from the entry guard
+
+The verification succeeded with 0 "Admitted" in the manual proof file.
+
+[TEXT]
+All steps complete. Here is a summary:
+
+**Input file**: `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/multi_merge/multi_merge.c`
+
+**Result**: `QCP_VERIFIED: YES`
+
+**Invariant inferred** (replacing `/* INFILL */`):
+```
+/*@ Inv Assert x != 0 && t != 0 &&
+    dllseg_shape(x, 0, t, u) *
+    dlistrep_shape(u, t) *
+    dlistrep_shape(y, 0) *
+    dlistrep_shape(z, 0)
+ */
+```
+
+**Key files**:
+- Result: `/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/result.txt`
+- Invariant file: `/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_inv.c`
+- Workspace: `/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/workspace/` (unrolled, symexec log, parsed states)
+- Verification log: `/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_verify.log`
+- Proof manual: `/home/tzh66/loop-invariant-inference/test_results_20260522_232716/System/GlibC/changed_codes/list/multi_merge/tmp/multi_merge_proof_manual.v` (0 Admitted)
+
+**Analysis**: The `multi_merge` function merges three doubly-linked lists (x, y, z). The loop iterates through x, splicing nodes from y and z in between existing x nodes. The invariant decomposes the state into: (1) a `dllseg_shape` for the already-built prefix from x to current position t, (2) a `dlistrep_shape` for the remaining x suffix starting at u, and (3) separate `dlistrep_shape` predicates for the remaining y and z lists. PROP constraints ensure x and t are non-null (from the entry guard `if (x == 0) return`). The symexec verified the invariant with 0 manual proof steps needed.

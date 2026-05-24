@@ -1,0 +1,45 @@
+#include "/home/tzh66/qcp_skill/infra/sll_nodata_def.h"
+
+struct list *reverse(struct list *p)
+/*@ Require listrep(p)
+    Ensure  listrep(__return)
+ */;
+
+struct list *append(struct list * x, struct list * y)
+/*@ Require listrep(x) * listrep(y)
+    Ensure  listrep(__return)
+ */;
+
+struct list *multi_rev(struct list *p, struct list *q)
+/*@ Require listrep(p) * listrep(q)
+    Ensure  listrep(__return)
+ */
+{
+    struct list *w, *t, *v, *x, *y;
+    w = 0;
+    x = 0;
+    v = p;
+    y = q;
+    /* INFILL */
+    while (1) {
+      if (v) {
+        t = v->next;
+        v->next = w;
+        w = v;
+        v = t;
+      }
+      else {
+        if (y) {
+          t = y->next;
+          y->next = x;
+          x = y;
+          y = t;
+        }
+        else { 
+          t = append(w , x);
+          return t;
+        }
+      }
+    }
+  // Deadcode : return 0;
+}

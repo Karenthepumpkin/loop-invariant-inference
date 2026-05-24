@@ -1,0 +1,81 @@
+QCP_VERIFIED: YES
+```c
+#include "/home/tzh66/qcp_skill/infra/dll_nodata_def.h"
+
+struct list *merge(struct list *x , struct list *y)
+/*@ With x_head
+    Require dlistrep_shape(x,x_head) * dlistrep_shape(y,0)
+    Ensure  dlistrep_shape(__return,x_head)
+ */;
+
+struct list *multi_merge(struct list *x , struct list *y, struct list *z)
+/*@ Require dlistrep_shape(x,0) * dlistrep_shape(y,0) * dlistrep_shape(z,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+{
+    struct list *t,*u,*x_head;
+    if (x == 0) {
+      x_head = 0;
+      t = merge(y,z);
+      return t;
+    }
+    else {
+      t = x;
+      u = t->next;
+      /*@ Inv Assert
+          x != 0 &&
+          t != 0 &&
+          dllseg_shape(x, 0, t, u) *
+          dlistrep_shape(u, t) *
+          dlistrep_shape(y, 0) *
+          dlistrep_shape(z, 0) *
+          has_permission(&x_head)
+       */
+      while (u) {
+        if (y) {
+          t ->next = y;
+          y ->prev = t;
+          t = y;
+          u ->prev = t;
+          y = y ->next;
+          if (y) {
+            y ->prev = 0;
+          }
+        }
+        else {
+          x_head = t;
+          u = merge(u , z);
+          t ->next = u;
+          return x;
+        }
+        if (z) {
+          t ->next = z;
+          z ->prev = t;
+          t = z;
+          u ->prev = t;
+          z = z ->next;
+          if (z) {
+            z ->prev = 0;
+          }
+        }
+        else {
+          x_head = t;
+          u = merge(u , y);
+          t ->next = u;
+          return x;
+        }
+        t ->next = u;
+        u ->prev = t;
+        t = u;
+        u = u ->next;
+      }
+  }
+  x_head = 0;
+  u = merge(y,z);
+  t ->next = u;
+  if (u) {
+    u ->prev = t;
+  }
+  return x;
+}
+```

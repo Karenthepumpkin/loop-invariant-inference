@@ -125,3 +125,4 @@ action : left_erase(1);
          left_add(data_at(field_addr(s, list, next), PTR(struct list), m));
          left_add(data_at(field_addr(s, list, prev), PTR(struct list), y));
          left_add(dllseg_shape(p, q, y, s));
+

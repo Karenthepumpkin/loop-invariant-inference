@@ -1,0 +1,1396 @@
+
+============================================================
+[THINKING] (193 chars)
+============================================================
+The user wants me to follow the SKILL.md file to infer loop invariants for a specific C file. Let me start by reading the SKILL.md file and the input C file to understand what needs to be done.
+
+[TEXT]
+I'll start by reading the SKILL.md file and the input C file in parallel.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/SKILL.md
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/rev_append/rev_append.c
+
+============================================================
+[THINKING] (1309 chars)
+============================================================
+Let me analyze the input file:
+
+1. **Header**: `dll_nodata_def.h` → Reference: `references/dll_nodata.md`, Coq lib: `dll_nodata_shape_lib`
+2. **Function**: `rev_append(struct list *p, struct list *q)` — reverses `p` and appends it to `q`
+3. **Precondition**: `dlistrep_shape(p,0) * dlistrep_shape(q,0)`
+4. **Postcondition**: `dlistrep_shape(__return,0)`
+5. **Loop body**: A DLL reversal that appends `p` onto `q`. It takes nodes from `v` (starting at `p`) and prepends them to `w` (starting at `q`).
+
+Let me understand the loop:
+- `w = q`, `v = p` (initialization before loop)
+- The loop is inside `if (w)` (i.e., `q != 0`)
+- Loop: while `v != 0`:
+  - `t = v->next`
+  - `v->next = w`
+  - `w->prev = v`
+  - `w = v`
+  - `v = t`
+  - if `v != 0`: `v->prev = 0`
+
+This is a DLL reversal where nodes from `p` are being prepended to `q`. The result is that `w` grows forward (nodes from `p` are added to the front of `q`), and `v` shrinks.
+
+Before we dive into the workflow, let me read the reference file for DLL predicates.
+
+Now let me set up the SKILL_DIR and execute the workflow.
+
+SKILL_DIR = /home/tzh66/loop-invariant-inference
+RESULT_DIR = /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append
+
+Let me start Step 1: Symbolic Execution & State Collection.
+
+[TEXT]
+Now let me read the DLL predicate reference and set up the result directories, then execute Step 1.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/references/dll_nodata.md
+
+[TOOL: Bash]
+Bash: mkdir -p /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/workspace /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp
+
+============================================================
+[THINKING] (14266 chars)
+============================================================
+Good. Now let me understand the data structures:
+
+- `dlistrep_shape(l, p)`: Doubly-linked list starting at `l` with prev pointer `p`. Parameters: (l, p) = (head pointer, prev of head).
+- `dllseg_shape(x, xp, yp, y)`: DLL segment from `x` to `y` (y not included). Parameters: (x, xp, yp, y) = (start, start's prev, last node in segment, endpoint marker).
+
+Now let's analyze the function:
+
+```c
+struct list *rev_append(struct list *p, struct list *q)
+/*@ Require dlistrep_shape(p,0) * dlistrep_shape(q,0)
+    Ensure  dlistrep_shape(__return,0)
+ */
+{
+    struct list *w, *t, *v;
+    w = q;
+    v = p;
+    if (w) {
+      /* INFILL */
+      while (v) {
+        t = v -> next;
+        v-> next = w;
+        w-> prev = v; 
+        w = v;
+        v = t;
+        if (v) {
+          v -> prev = 0;
+        }
+      }
+    }
+    else {
+      w = reverse(v);
+    }
+    return w;
+}
+```
+
+The function reverses list `p` and appends it to list `q`. The `if (w)` checks if `q` is not null. Inside, the loop takes nodes from `v` (starting at `p`) and prepends them to `w` (starting at `q`). 
+
+Let me think about the invariant:
+
+Initially:
+- `w = q` (the tail list, which will remain at the end of the result)
+- `v = p` (the list to reverse and prepend)
+
+The loop body:
+1. `t = v->next` — save the rest of the v-list
+2. `v->next = w` — prepend v to w (v now points forward to old w)
+3. `w->prev = v` — link back (old w's prev now points to v)
+4. `w = v` — move w to the newly prepended node
+5. `v = t` — advance v to the rest
+6. If `v != 0`: `v->prev = 0` — break the old back-link in the new head of v
+
+This is building a DLL from the reversed `p` linked together with `q`. 
+
+The invariant should describe:
+- `w` points to a DLL in reverse order (the already-processed prefix of `p`, followed by `q`)
+- `v` points to the remaining unprocessed suffix of `p`
+
+Actually, let me think more carefully. After the loop processes some nodes:
+
+- `w` is the head of the reversed prefix of `p`, with `q` at the end. So `dlistrep_shape(w, 0)` - but wait, that would mean the whole thing is a proper DLL. But `w->prev` isn't necessarily 0 because `w` was `q` to start, and we're prepending to it.
+
+Actually let me re-think. The operation is: take the first node of `v`, detach it, link it before `w`. So `w` grows at the front by gaining nodes from `v`.
+
+After some iterations:
+- `w` → n_k → n_{k-1} → ... → n_1 → q_head → ... → q_last → 0
+  where each node except `w` (which is n_k) has its prev correctly set. `w->prev` should be 0 because... hmm.
+
+Wait, let me trace more carefully for a simple example:
+- p = [1 -> 2 -> 3], q = [4 -> 5]
+- Initially: v = p = [1], w = q = [4]
+
+Iter 1 (v = 1):
+- t = v->next = 2
+- v->next = w (1->next = 4)
+- w->prev = v (4->prev = 1)
+- w = v (w = 1)
+- v = t (v = 2)
+- v != 0: v->prev = 0 (2->prev = 0)
+
+After iter 1: w → [1 → 4 → 5], v → [2 → 3]
+  - w=1, 1->next=4, 1->prev=???. The initial `p` had 1->prev=0 (since dlistrep_shape(p, 0)). So 1->prev=0.
+  - Actually wait. `p = [1 -> 2 -> 3]` as `dlistrep_shape(p,0)` means:
+    - 1->prev = 0, 1->next = 2
+    - 2->prev = 1, 2->next = 3
+    - 3->prev = 2, 3->next = 0
+
+After the first node's detach-prepend:
+  - 1->next = 4 (set by `v->next = w`)
+  - 4->prev = 1 (set by `w->prev = v`)
+  - w = 1 (1 becomes new head)
+  - v = 2 (next node)
+  - 2->prev = 0 (set by `v->prev = 0`)
+
+So after iteration 1: w = 1, v = 2
+  - w chain: 1->next=4, 4->next=5, 5->next=0 (assuming q is [4->5->0])
+  - Backward: 5->prev=4, 4->prev=1, 1->prev=0 (from original, never changed)
+  - v chain: 2->prev=0, 2->next=3, 3->prev=2, 3->next=0
+
+So we have: `dlistrep_shape(w, 0)` for the processed part (1->4->5 with correct prev/next), and `dlistrep_shape(v, 0)` for the remaining part (2->3 with corrected prev of 2 set to 0).
+
+Iter 2 (v = 2):
+- t = v->next = 3
+- v->next = w (2->next = 1)
+- w->prev = v (1->prev = 2)
+- w = v (w = 2)
+- v = t (v = 3)
+- v != 0: v->prev = 0 (3->prev = 0)
+
+After iter 2: w = 2, v = 3
+  - w: 2->next=1, 1->next=4, 4->next=5, 5->next=0
+  - Back: 5->prev=4, 4->prev=1, 1->prev=2, 2->prev=0 (from v->prev=0 set in prev iteration)
+  - v: 3->prev=0, 3->next=0
+
+So `dlistrep_shape(w, 0)` and `dlistrep_shape(v, 0)`.
+
+Iter 3 (v = 3):
+- t = v->next = 0
+- v->next = w (3->next = 2)
+- w->prev = v (2->prev = 3)
+- w = v (w = 3)
+- v = t (v = 0)
+- v == 0: no prev fix
+
+After iter 3: w = 3, v = 0
+  - w: 3->next=2, 2->next=1, 1->next=4, 4->next=5, 5->next=0
+  - Back: 5->prev=4, 4->prev=1, 1->prev=2, 2->prev=3, 3->prev=0
+  - This is `dlistrep_shape(w, 0)` ✓
+
+So the invariant seems to be: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`. Both `w` and `v` are proper DLLs throughout the loop.
+
+Wait, but `w->prev` is 0? Let me verify. Initially `w = q`, and `q` is `dlistrep_shape(q,0)` so `q->prev = 0`. Then in iteration 1, `w->prev = v` sets `q->prev = 1`. But then `w = v` makes `w = 1`, and `1->prev = 0` (from original list). So `w->prev = 0` ✓.
+
+In iteration 2, `w->prev = v` sets `1->prev = 2`, and then `w = 2`, and `2->prev` was set to 0 in the previous iteration's `v->prev = 0`. So `w->prev = 0` ✓.
+
+This pattern holds: each iteration sets the old w's prev to the new node, then moves w to the new node (whose prev is already 0 from either the original list or the previous iteration's cleanup).
+
+So the invariant is: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`
+
+This is a very simple invariant! The two lists are always proper DLLs.
+
+But wait, we need to also consider PROP constraints. The loop condition is `while (v)`, so inside the loop body, `v != 0`. The loop body also accesses `v->next` and `v->prev`, so we need `v` to be non-null when we enter the loop body, and `v != 0` as part of the invariant's PROP.
+
+Also, `w` is not guaranteed to be non-null, but the if condition `if (w)` ensures `w != 0` before entering the loop. And we never set `w` to null in the loop body (each iteration sets w to v, and v != 0 in the body). So `w != 0` should also be in PROP.
+
+Actually wait - do we need PROP at all? The loop condition is `while (v)`, and the loop body accesses `v->next` and `v->prev`. For the invariant, we just need to describe the shape of memory. The loop body checks `v` before entering, so inside the bod y, `v` is known to be non-null. But in the invariant at the loop head, `v` could be anything.
+
+Actually, let me reconsider. The invariant describes the state at the loop head. At that point, `v` could be 0 (indicating loop termination). But inside the loop body, `v` is guaranteed non-null because of the condition check.
+
+However, QCP's strategy system may need PROP constraints to know when to unfold predicates. Let me first try the simplest invariant without any PROP: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`.
+
+Hmm, but let me reconsider. Let me look at what happens in the loop body:
+1. `t = v->next` — needs `v->next` to be accessible → `dlistrep_shape(v, 0)` gives us `data_at(field_addr(v, next), ...)`
+2. `v->next = w` — writes to `v->next`
+3. `w->prev = v` — writes to `w->prev` → need permission for `w->prev`
+4. `w = v`
+5. `v = t`
+6. `if (v) v->prev = 0` — writes to `v->prev`
+
+For step 3, `w->prev`: `w` is the head of the other DLL, so `dlistrep_shape(w, 0)` should give us `data_at(field_addr(w, prev), ...)` since `w`'s prev is 0. So that should work.
+
+But wait - in the loop body, `w->prev = v` writes to `w->prev`. Since `w` is the first argument of `dlistrep_shape(w, 0)`, strategies can unfold it to expose `w->prev`.
+
+Similarly, `v->next = w` writes to `v->next`. Since `v` is the first argument of `dlistrep_shape(v, 0)`, strategies can unfold it to expose `v->next`.
+
+So the invariant `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)` should work.
+
+Let me also think about the `has_permission` checklist:
+- `w`: covered by `dlistrep_shape(w, 0)` — first argument → ✓
+- `v`: covered by `dlistrep_shape(v, 0)` — first argument → ✓
+- `t`: assigned in loop body, used in `v = t`. `t` gets its value from `v->next`, which is accessible via the `dlistrep_shape(v, 0)` predicate. After `v = t`, `v`'s new value is `t`. Does `t` need `has_permission`? `t` is just a local variable used to temporarily hold `v->next`. It doesn't need its own permission — it's just a variable assignment. 
+
+What about `w->prev = v`? `w`'s prev field is part of `dlistrep_shape(w, 0)`, so strategies can unfold it. ✓
+
+Actually, let me think again about whether PROP is needed. When the invariant is checked at the loop head, QCP needs to prove that the invariant holds initially (entry), is preserved by the loop body, and that the invariant + exit condition implies the postcondition.
+
+For the entry check: initially, `w = q` and `v = p`. The invariant `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)` becomes `dlistrep_shape(q, 0) * dlistrep_shape(p, 0)`. This matches the precondition. ✓
+
+For the exit check: when `v == 0`, `dlistrep_shape(v, 0)` = `dlistrep_shape(0, 0)` = `emp` (by definition, `l == 0 && emp`). So the post-state is `dlistrep_shape(w, 0)`, matching the postcondition (`__return = w`). ✓
+
+For preservation: the loop body starts with `v != 0`. After the body executes, we need to show that the invariant still holds with the new values of `w` and `v`. This is the key check.
+
+After one iteration:
+- New w = old v (the node prepended)
+- New v = old v->next (the rest of the list)
+- The old w's prev is now set to old v
+- old v's next is set to old w
+
+So `dlistrep_shape(new_w, 0) * dlistrep_shape(new_v, 0)` should hold.
+
+Let me trace more formally:
+Before: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)` with `v != 0`
+Unfold `dlistrep_shape(v, 0)`:
+  → exists t, data_at(v->next, t) * data_at(v->prev, 0) * dlistrep_shape(t, v)
+
+After body:
+  - v->next = w: `data_at(v->next, w)` replaces `data_at(v->next, t)`
+  - w->prev = v: need to unfold `dlistrep_shape(w, 0)` for this
+  - new_w = v, new_v = t
+
+We need to show: `dlistrep_shape(v, 0) * dlistrep_shape(t, 0)`
+
+From the unfolded state, we have:
+- data_at(v->next, w) * data_at(v->prev, 0) * (rest of w's list with w->prev = v)
+- dlistrep_shape(t, v) (but v is no longer in t's list... hmm)
+
+Actually this is tricky. After the body executes:
+- v->next = w (the old w is now linked from v)
+- w->prev = v
+- The rest of the old w's list (q) follows w unchanged
+- t points to the old v->next, and t->prev was set to 0 by `if (v) v->prev = 0`
+
+Wait, the `if (v)` check after `v = t`: this sets `new_v->prev = 0` if new_v != 0.
+
+So after the body:
+- v (new w) has: v->next = old_w, v->prev = 0
+- old_w: old_w->prev = v (new w), old_w->next unchanged
+- t (new v): t->prev = 0 (if t != 0)
+
+So `dlistrep_shape(v, 0)` should hold for the new w because:
+- v->prev = 0 ✓
+- v->next = old_w, and old_w's list is a proper DLL with old_w->prev = v ✓
+
+And `dlistrep_shape(t, 0)` should hold for the new v because:
+- t->prev = 0 (set by the if statement) ✓  
+- t's next chain is unchanged ✓
+
+This looks correct. But QCP's strategies need to be able to prove this, which depends on the available strategy rules.
+
+Let me proceed with the workflow and see if the simplest invariant works. Let me first do the symbolic execution.
+
+Now let me also think about `has_permission`. The loop body uses `t` as a temporary variable. It's assigned `v->next` and then assigned to `v`. Does `t` need `has_permission`? No - `t` is just a local variable holding a value, it's never dereferenced. The only variables dereferenced are `v` and `w`, both covered by `dlistrep_shape`.
+
+So my first attempt at the invariant is:
+```
+dlistrep_shape(w, 0) * dlistrep_shape(v, 0)
+```
+
+No PROP needed since the structure predicates already encode all necessary information.
+
+Wait, I need to check: does the loop body access `w->prev`? Yes: `w->prev = v`. For this, QCP needs to unfold `dlistrep_shape(w, 0)` to get access to `w->prev`. Does it have a strategy for that? It should, because `w` is the first argument of `dlistrep_shape(w, 0)`, and the strategy rule for `dlistrep_shape` unfolds it when `w != 0`.
+
+But wait, in the invariant at the loop head, we don't have `w != 0` in PROP. Strategies might need `w != 0` to trigger the unfold rule. However, since we pre-checked `if (w)` before the loop, `w` is guaranteed to be non-null at loop entry and remains non-null throughout.
+
+Actually, for the invariant at the loop head: if `w` could be 0, then `dlistrep_shape(w, 0)` = `emp` (by definition: `l == 0 && emp`), and `w->prev` wouldn't be accessible. But in this function, `w` is known to be non-null (from the `if (w)` guard). So the invariant should include `w != 0` in PROP to enable unfolding.
+
+Hmm, but let me think about this differently. The invariant is checked at the loop head. At that point, the loop body hasn't executed yet, so `w` and `v` have whatever values they had at entry/preservation. For entry: `w = q`, `v = p`. We know `q != 0` (from `if (w)` check). So at entry, `w != 0`. But `v` might be 0.
+
+Actually wait - the `if (v)` for `v->prev = 0` is inside the loop body. If `v` is 0 at the loop head, the loop exits immediately. So the invariant says `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`. If `v = 0`, then `dlistrep_shape(0, 0) = emp`, and the invariant is `dlistrep_shape(w, 0)`. If `v != 0`, both predicates are non-trivial.
+
+The loop body dereferences `v` and `w`. When `v != 0` (loop enters), the strategies unfold both predicates. QCP knows `v != 0` from the loop condition, so it can unfold `dlistrep_shape(v, 0)`. But does it know `w != 0`? 
+
+Strategies often need a `w != 0` PROP constraint to trigger unfolding of `dlistrep_shape(w, 0)`. Without it, they might not unfold, and then `w->prev` can't be accessed.
+
+But in this case, we know `w` is always non-null because we're inside `if (w)`. The invariant is placed inside the `if (w)` branch, so `w != 0` is a known fact.
+
+I'll add `w != 0` to the invariant's PROP for safety. Actually, let me think again... if strategies need it, they need it in the PROP. But PROP constraints can only use program variables, and `w != 0` is such a constraint.
+
+Let me try:
+```
+/*@ Inv Assert dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+First without any PROP, and if it fails, I'll add `w != 0` and/or `v != 0`.
+
+Actually, I realize I should first run the symexec to see the actual recording point states, so I can validate my invariant against them. Let me proceed with Step 1.
+
+[TEXT]
+Let me now execute Step 1: Unroll the loop, run symexec, parse the log.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/unroll_loop.py --file /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/rev_append/rev_append.c --output /home/tzh66/loop-invariant-inference/workspace/rev_append_unrolled.c --ensure-emp
+
+============================================================
+[THINKING] (50 chars)
+============================================================
+Good, unrolling succeeded. Now let me run symexec.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/tmp/rev_append_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/tmp/rev_append_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/tmp/rev_append_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/workspace/rev_append_unrolled.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/workspace/rev_append_symexec.log
+
+============================================================
+[THINKING] (64 chars)
+============================================================
+Let me check the tail to verify it succeeded, and parse the log.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/workspace/rev_append_symexec.log
+
+============================================================
+[THINKING] (37 chars)
+============================================================
+Symexec succeeded. Now parse the log.
+
+[TEXT]
+Symexec succeeded. Now parse the log to extract recording points.
+
+[TOOL: Bash]
+Bash: python /home/tzh66/loop-invariant-inference/scripts/qcp_parse_log.py \
+  --file /home/tzh66/loop-invariant-inference/workspace/rev_append_symexec.log \
+  --out-states /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/workspace/rev_append_states.txt \
+  --out-json /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/workspace/rev_append_states.json
+
+============================================================
+[THINKING] (135 chars)
+============================================================
+Good, 3 recording points: RP_pre_loop, RP_iter_2, RP_iter_3. Let me read the full states file to understand the exact state at each RP.
+
+[TEXT]
+We have 3 RPs. Let me read the states file to see the full content of each RP.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/workspace/rev_append_states.txt
+
+============================================================
+[THINKING] (17085 chars)
+============================================================
+Let me analyze the RPs carefully.
+
+**RP_pre_loop**: Before first iteration
+- PROP: `q@pre != 0` (from the `if (w)` guard)
+- LOCAL: Standard bindings
+- SEP:
+  - `data_at(v_297_addr, struct list*, p@pre)` → `v = p`
+  - `undef_data_at(t_294_addr, struct list*)` → `t` is uninitialized
+  - `data_at(w_291_addr, struct list*, q@pre)` → `w = q`
+  - `data_at(q_280_addr, struct list*, q@pre)` → `&q` holds `q@pre`
+  - `data_at(p_283_addr, struct list*, p@pre)` → `&p` holds `p@pre`
+  - `dlistrep_shape(p@pre, 0)` → original list p
+  - `dlistrep_shape(q@pre, 0)` → original list q
+
+Key mapping:
+- `v = p@pre`, `w = q@pre`
+- Both `p` and `q` are full DLLs
+
+**RP_iter_2**: After 1 iteration, before 2nd iteration check
+- exists: `y_303, y_307, y_311`
+- PROP: `p@pre != 0, q@pre != 0, y_303 != 0`
+- SEP:
+  - `data_at(&(y_303->prev), struct list*, 0)` → `y_303->prev = 0`
+  - `dlistrep_shape(y_311, y_303)` → a DLL segment
+  - `data_at(&(y_303->next), struct list*, y_311)` → `y_303->next = y_311`
+  - `data_at(&(q@pre->prev), struct list*, p@pre)` → `q@pre->prev = p@pre`
+  - `dlistrep_shape(y_307, q@pre)` → remaining of q's list
+  - `data_at(&(q@pre->next), struct list*, y_307)` → `q@pre->next = y_307`
+  - `data_at(&(p@pre->next), struct list*, q@pre)` → `p@pre->next = q@pre`
+  - `data_at(&(p@pre->prev), struct list*, 0)` → `p@pre->prev = 0`
+  - `data_at(v_297_addr, struct list*, y_303)` → `v = y_303`
+  - `data_at(t_294_addr, struct list*, y_303)` → `t = y_303` (wait, both v and t have same value?)
+  - `data_at(w_291_addr, struct list*, p@pre)` → `w = p@pre`
+  - `data_at(q_280_addr, struct list*, q@pre)`
+  - `data_at(p_283_addr, struct list*, p@pre)`
+
+Let me decode this. After 1 iteration:
+- `w = p@pre` (first node from p was prepended to q, w now points to it)
+- `v = y_303` (the next node in the original p list... wait)
+- `t = y_303` (same as v, this is from after `v = t`)
+
+Analysis of the list structures:
+- `p@pre` was the original first node of p. After the body:
+  - `p@pre->prev = 0` (unchanged from original)
+  - `p@pre->next = q@pre` (was set by `v->next = w` where v=p@pre, w=q@pre)
+  - So the node `p@pre` is now the head of the combined reversed+original lists.
+  - `dlistrep_shape(p@pre, 0)` — is this what we see? Well, `p@pre->prev=0`, `p@pre->next=q@pre`. And `q@pre->prev=p@pre` (was set by `w->prev = v`). And `q@pre->next=y_307`, with `dlistrep_shape(y_307, q@pre)`. So yes, from `p@pre` to the end is a DLL.
+
+- `y_303` is the next node from the original p. It would be `p@pre->next` originally.
+  - `y_303->prev = 0` (set by `if (v) v->prev = 0` where v=y_303)
+  - `y_303->next = y_311`
+  - `dlistrep_shape(y_311, y_303)` — the rest of the original p list
+
+Wait, but this doesn't match my earlier analysis. Let me re-examine.
+
+Original list p: p@pre -> n1 -> n2 -> ... -> 0
+- p@pre->prev = 0, p@pre->next = n1
+- n1->prev = p@pre, n1->next = n2
+
+In this RP, y_303 maps to n1. Let me verify:
+- y_303->prev = 0 (set by `v->prev = 0` where v=y_303 after the first iteration)
+- y_303->next = y_311 (original n1->next, where y_311 = n2)
+- dlistrep_shape(y_311, y_303) — the rest of n1's list starting from n2, with prev correctly y_303
+
+But wait, after `v->prev = 0`, y_303->prev should be 0. And indeed the RP shows `data_at(&(y_303->prev), 0)`. ✓
+
+Also, p@pre (old head) now has:
+- p@pre->prev = 0 (original)
+- p@pre->next = q@pre (set by `v->next = w`)
+
+And q@pre has:
+- q@pre->prev = p@pre (set by `w->prev = v`)
+- q@pre->next = y_307 (original, since q's next is the second node of q)
+- dlistrep_shape(y_307, q@pre)
+
+So the structure after iteration 1:
+```
+[p@pre] -> [q@pre] -> [q2] -> ... -> 0  (w list: reversed head + q)
+prev:     0 <- p@pre <- q@pre <- ...     (backward links correct)
+
+[y_303] -> [y_311] -> ... -> 0          (v list: remaining of p)
+prev:     0 <- y_303 <- ...              (backward: y_303 prev = 0 from code)
+```
+
+This confirms:
+- `dlistrep_shape(p@pre, 0)` covers the w-list from p@pre onwards ✓ (well, except y_303->prev was set to p@pre, wait no. In the code, `w->prev = v` sets the OLD w's prev to the new node. In iteration 1, old w = q@pre, new node = p@pre. So `q@pre->prev = p@pre`. And the RP shows `data_at(&(q@pre->prev), p@pre)`. ✓
+
+But in RP_iter_2, we see the SEP items individually laid out (data_at nodes for p@pre and q@pre) rather than a folded `dlistrep_shape(p@pre, 0)`. This is because QCP unfolded the predicates.
+
+Actually wait, let me look again:
+- `data_at(&(p@pre->next), q@pre)` — p@pre's next
+- `data_at(&(p@pre->prev), 0)` — p@pre's prev
+- `data_at(&(q@pre->prev), p@pre)` — q@pre's prev
+- `data_at(&(q@pre->next), y_307)` — q@pre's next
+- `dlistrep_shape(y_307, q@pre)` — rest of q's list
+
+So p@pre and q@pre are unfolded into individual data_at nodes. QCP might have started with `dlistrep_shape(p@pre, 0)` and unfolded it to expose p@pre's fields (since v = p@pre was used in the loop body).
+
+But there's no `dlistrep_shape(p@pre, 0)` in RP_iter_2. The p@pre node and q@pre node are now linked together but the predicate is "broken" into data_at nodes. This is normal for the symexec of the unrolled loop — the state is the result of executing one loop iteration, and QCP unfolds predicates as needed for the body and leaves the rest.
+
+So for the invariant, I need to specify folded predicates that describe the two DLLs:
+- `dlistrep_shape(w, 0)` for the w-list (processed prefix)
+- `dlistrep_shape(v, 0)` for the v-list (remaining suffix)
+
+Let me verify against RP_iter_2:
+- `w = p@pre`. Does `dlistrep_shape(p@pre, 0)` hold? Let's check:
+  - p@pre->prev = 0 ✓
+  - p@pre->next = q@pre
+  - q@pre->prev = p@pre
+  - q@pre->next = y_307
+  - y_307 starts `dlistrep_shape(y_307, q@pre)` — a DLL starting at y_307 with prev q@pre
+  - So yes, `dlistrep_shape(p@pre, 0)` holds for the w-list ✓
+
+- `v = y_303`. Does `dlistrep_shape(y_303, 0)` hold?
+  - y_303->prev = 0 ✓
+  - y_303->next = y_311
+  - y_311 starts `dlistrep_shape(y_311, y_303)` — a DLL starting at y_311 with prev y_303
+  - But for `dlistrep_shape(y_303, 0)`, we need y_303->prev = 0 (✓) AND the rest to be connected correctly.
+  - Waiting... `dlistrep_shape(y_311, y_303)` means y_311->prev = y_303, and y_311 is the start of a DLL whose prev is y_303. But for `dlistrep_shape(y_303, 0)` to hold, the unfolded form should be:
+    - data_at(y_303->next, y_311) * data_at(y_303->prev, 0) * dlistrep_shape(y_311, y_303)
+    - This matches the RP! ✓
+
+So `dlistrep_shape(v, 0)` covers `dlistrep_shape(y_303, 0)` which is equivalent to the RP's state ✓.
+
+**RP_iter_3**: After 2 iterations, before 3rd iteration check
+- exists: `y_303, y_307, y_311, y_318`
+- PROP: `y_303 != 0, p@pre != 0, q@pre != 0, y_311 != 0`
+
+- `v = y_311`, `t = y_311`, `w = y_303`
+
+SEP analysis:
+- `data_at(&(y_311->prev), 0)` — new v's prev = 0
+- `dlistrep_shape(y_318, y_311)` — remaining of v-list
+- `data_at(&(y_311->next), y_318)` — v->next
+- `data_at(&(y_303->prev), 0)` — new w's prev = 0
+- `data_at(&(y_303->next), p@pre)` — new w->next = old w (p@pre)
+- `data_at(&(q@pre->prev), p@pre)` — unchanged
+- `dlistrep_shape(y_307, q@pre)` — unchanged
+- `data_at(&(q@pre->next), y_307)` — unchanged
+- `data_at(&(p@pre->next), q@pre)` — unchanged
+- `data_at(&(p@pre->prev), y_303)` — CHANGED: p@pre->prev is now y_303 (was set by `w->prev = v`)
+
+Wait! `p@pre->prev = y_303`. This matters. In iteration 2, w was p@pre, and v was y_303. The body executed: `w->prev = v` → `p@pre->prev = y_303`. So now p@pre->prev != 0!
+
+But I claimed `dlistrep_shape(p@pre, 0)` should hold... but if p@pre->prev = y_303 ≠ 0, then `dlistrep_shape(p@pre, 0)` doesn't hold because the definition requires the head's prev = 0.
+
+Hmm, but w = y_303 now. Let me check:
+- y_303->prev = 0 ✓
+- y_303->next = p@pre
+- p@pre->prev = y_303 (set by prev iteration's body)
+- p@pre->next = q@pre
+- q@pre->prev = p@pre
+- etc.
+
+So the w-list is: y_303 -> p@pre -> q@pre -> y_307 -> ... -> 0
+Backward: 0 <- y_303 <- p@pre <- q@pre <- ...
+
+`dlistrep_shape(y_303, 0)` holds because y_303->prev = 0 and the chain is connected. ✓
+
+For the v-list:
+- y_311->prev = 0 (set by prev iteration's `if (v) v->prev = 0`)
+- y_311->next = y_318
+- dlistrep_shape(y_318, y_311)
+
+`dlistrep_shape(y_311, 0)` holds. ✓
+
+So in RP_iter_3:
+- w = y_303, `dlistrep_shape(y_303, 0)` holds ✓
+- v = y_311, `dlistrep_shape(y_311, 0)` holds ✓
+
+This confirms the invariant: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`.
+
+Now let me check PROP. I don't think we need any PROP in the invariant. The predicates alone describe the state. The loop condition `while (v)` provides the `v != 0` context when entering the loop body, and strategies should be able to unfold `dlistrep_shape(v, 0)` using that context (the rule for `dlistrep_shape` unfold likely requires the head to be non-zero, which the loop condition provides).
+
+But wait - the strategies might need `w != 0` to unfold `dlistrep_shape(w, 0)` for accessing `w->prev` in the loop body. Since we're inside `if (w)` and `w` is never set to 0, `w != 0` is always true in the loop. But does the invariant need to express it?
+
+Strategies in QCP typically use PROP constraints to decide when to unfold. If `w` could be 0 (from the invariant's perspective), the strategy might not unfold `dlistrep_shape(w, 0)`, and `w->prev` might not be accessible through any predicate.
+
+Actually, looking at the RP_pre_loop: `q@pre != 0` in PROP. And `w = q@pre`. So the pre-loop state already has `w != 0` encoded. But when QCP checks loop preservation, it uses the invariant as the entry state. If the invariant doesn't have `w != 0`, strategies might not unfold.
+
+I think I should include `w != 0` in the invariant's PROP to be safe. The invariant would be:
+```
+/*@ Inv Assert w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+Wait, actually looking at this more carefully, the invariant should only describe what's true at the loop head for ALL iterations. At the loop head:
+- `w` is always non-null because we entered the `if (w)` branch. ✓
+- `v` may be null or non-null. In RP_pre_loop, v = p@pre, and we know v != 0 because... actually wait. RP_pre_loop has `q@pre != 0` but NOT `p@pre != 0`. So `v` (which equals `p@pre`) might be 0!
+
+Hmm, so in RP_pre_loop, we DON'T have `p@pre != 0`. This means `v` could be 0 at loop entry. The PROP in RP_pre_loop only has `q@pre != 0`.
+
+But the loop is `while (v)`. If v == 0, the loop doesn't execute. And in that case, the invariant must hold (trivially: `dlistrep_shape(w, 0) * dlistrep_shape(0, 0)` = `dlistrep_shape(w, 0) * emp` = `dlistrep_shape(w, 0)`).
+
+OK so the invariant should NOT include `v != 0` in PROP, because v might be 0.
+
+And for `w != 0`: RP_pre_loop has `q@pre != 0` and w = q@pre. So w != 0. RP_iter_2 has w = p@pre and p@pre != 0. RP_iter_3 has w = y_303 and y_303 != 0. So w != 0 in all RPs. 
+
+I think the invariant is: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`.
+
+Let me add `w != 0` in PROP as well, since it's true in all RPs and might help strategies unfold `dlistrep_shape(w, 0)`.
+
+Actually, wait. Let me think about this more carefully by looking at what the strategies actually do. The dll_nodata strategies file has rules for unfolding `dlistrep_shape`. Rule 3 (from the reference output) handles `dlistrep_shape(x, p)`:
+```
+Start to parse rule 3 in file dll_nodata
+Type inference result for strategy (dll_nodata, 3):
+Current type environment:
+x -> Z
+p -> Z
+```
+
+I don't know the exact strategy conditions, but typically:
+- `dlistrep_shape(x, p)` unfold needs `x != 0` to produce `data_at(x->next, t) * data_at(x->prev, p) * dlistrep_shape(t, x)`
+
+So for `dlistrep_shape(w, 0)`, the strategy needs `w != 0`. If `w` is known to be non-null (from the `if (w)` branch), QCP should have this as context... but strategies are applied at the invariant check level, they might need the PROP in the invariant itself.
+
+Let me include `w != 0` in PROP. The final invariant:
+```
+/*@ Inv Assert w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+Now let me think about `has_permission`:
+- `w`: first argument of `dlistrep_shape(w, 0)` → covered ✓
+- `v`: first argument of `dlistrep_shape(v, 0)` → covered ✓
+- `t`: locally assigned (`t = v->next`, `v = t`). t is just a temp variable, never dereferenced. Does it need permission? To read/write `t` as a variable, QCP needs its stack cell. But `t` is declared locally. Hmm, but in QCP's representation, local pointers need `has_permission` if they're assigned in the loop body and not covered by any spatial predicate. Let me check RP_pre_loop: `undef_data_at(t_294_addr, struct list*)`. This is `t` with undefined value. Then in RP_iter_2: `data_at(t_294_addr, struct list*, y_303)`. So QCP assigns a value to `t`'s stack cell.
+
+The question is: does the invariant need to carry `has_permission(&t)`?
+
+According to the SKILL.md rule: "Add `has_permission(&var)` when the loop body operates on a pointer (dereference, field access, assignment through it) but that pointer is not already covered by a spatial predicate."
+
+`t` is assigned (t = v->next, v = t) but not dereferenced. The assignment to `t` itself uses `t`'s stack cell. In QCP, the invariant must carry `has_permission` for local variables that are assigned in the loop body and whose stack cells would otherwise be dropped.
+
+Wait, but `t` in RP_pre_loop has `undef_data_at(t_294_addr, ...)`. This is the pre-loop state. The `/*@ Inv Assert */` replaces the entire state, so we need to make sure `t`'s stack cell is carried. But `t` is NEVER used in RP_pre_loop... actually it is. In RP_pre_loop: `undef_data_at(t_294_addr, struct list*)`. 
+
+Hmm, but do we need `has_permission(&t)` in the invariant? Let me think:
+- `t = v->next` reads `v->next` (permission from `dlistrep_shape(v, 0)`) and writes to `t` (needs permission for `t`'s stack cell)
+- `v = t` reads `t` (needs permission for `t`'s stack cell) and writes to `v` (covered by `dlistrep_shape(v, 0)`)
+
+In QCP, reading from `t` doesn't need permission if `t` is a program variable. Writing to `t` (assignment) does create a `data_at` for `t`'s stack cell. When the invariant replaces the state, if `t`'s stack cell isn't carried, QCP can't write to `t`.
+
+Actually, I think the invariant doesn't need to carry `t`'s stack cell because `t` is a local variable and QCP manages it separately. The SKILL.md says:
+
+"Do NOT add `has_permission` for:
+- Freshly declared, uninitialized pointers that aren't yet accessed."
+
+But `t` IS accessed: `t = v->next` writes to it. So maybe it does need `has_permission`.
+
+Let me look at the checklist:
+"For each pointer-typed variable, check: (1) is it dereferenced/assigned-through in the loop body? (2) does it already appear as arg[0] of a SEP predicate? If yes to (1) and no to (2), add `has_permission(&var)`."
+
+For `t`:
+(1) Is it assigned-through in the loop body? `t = v->next` — yes, t is assigned a value. But "assigned-through" means `*t = ...` or `t->field = ...`. Regular assignment `t = ...` just sets the local variable. I think "assigned-through" means dereferencing it to write to the heap. So `t` is just a local variable, not dereferenced for writes.
+
+Hmm, but `t`'s stack cell is used. Let me check if the code writes `*t` or `t->field`:
+- `t = v->next` — only reads v->next, writes to t's local cell
+- None of the loop body code dereferences `t`
+
+So `t` doesn't need `has_permission`. Its stack cell is managed by QCP internally.
+
+Actually, I'm second-guessing myself. Let me just try the simple invariant first and see if it passes. If not, I'll add `has_permission(&t)`.
+
+Final first attempt:
+```
+/*@ Inv Assert dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+Wait, should I include `w != 0`? Let me be more conservative and include it:
+```
+/*@ Inv Assert w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+Actually wait, let me re-check RP_pre_loop. The PROP has only `q@pre != 0`, and w = q@pre. But in the invariant, I write `w != 0`, not `q@pre != 0`. Since in the invariant, `w` is the program variable, `w != 0` is equivalent to `q@pre != 0` at entry.
+
+But wait - is `w != 0` true in ALL RPs? Let me check:
+- RP_pre_loop: w = q@pre, q@pre != 0 → w != 0 ✓
+- RP_iter_2: w = p@pre, p@pre != 0 → w != 0 ✓
+- RP_iter_3: w = y_303, y_303 != 0 → w != 0 ✓
+
+Yes, w != 0 is true in all RPs. So it's valid to include in the invariant.
+
+But do I NEED it? The RP has `q@pre != 0` in PROP, which is the same as `w != 0` since w = q@pre.
+
+Let me try the simplest first and add PROP if needed. Let me go with:
+```
+/*@ Inv Assert dlistrep_shape(w, 0) * dlistrep_shape(v, 0) */
+```
+
+Actually, let me think once more. The `if (w)` check before the loop ensures `w != 0` at loop entry. At loop exit, `w` is still non-null because we never set `w = 0` in the loop body. And for preservation, `w` is always the newly prepended node which is non-null (it came from v, and v != 0 when we enter the loop body).
+
+So I don't think `w != 0` is strictly necessary in the invariant for verification. The invariant just describes the heap shape. The loop body itself provides the `v != 0` condition for the strategies.
+
+OK, let me just go with the simplest invariant. Let me write the test file and verify.
+
+[TEXT]
+Now I have the 3 RPs. Let me analyze them:
+
+**RP_pre_loop**: `q@pre != 0`, both lists intact: `dlistrep_shape(p@pre, 0) * dlistrep_shape(q@pre, 0)`. Variables: `v = p@pre`, `w = q@pre`.
+
+**RP_iter_2** (after 1 iteration): `w = p@pre`, `v = y_303`. Both `dlistrep_shape(p@pre, 0)` (processed prefix + q) and `dlistrep_shape(y_303, 0)` (remaining suffix) hold.
+
+**RP_iter_3** (after 2 iterations): `w = y_303`, `v = y_311`. Both `dlistrep_shape(y_303, 0)` and `dlistrep_shape(y_311, 0)` hold.
+
+The invariant pattern is clear: at every loop head, both `w` and `v` point to proper DLLs with prev=0. The loop body takes one node from `v` and prepends it to `w`. The invariant is: `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`.
+
+Now let me write the invariant test file and verify (Step 3).
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/rev_append/rev_append.c
+
+============================================================
+[THINKING] (126 chars)
+============================================================
+OK, let me write the invariant file. The original file has `/* INFILL */` on line 18. I need to replace it with the invariant.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c
+
+============================================================
+[THINKING] (29 chars)
+============================================================
+Now run symexec verification.
+
+[TEXT]
+Now run symexec to verify the invariant.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (22 chars)
+============================================================
+Good, now run symexec.
+
+[TOOL: Bash]
+Bash: /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (2340 chars)
+============================================================
+The symexec output shows a fatal error: "cannot find the program variable t(292) in assertion". This is because:
+
+1. The invariant `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)` doesn't include `t`'s stack cell.
+2. When the `/*@ Inv Assert */` replaces the state, QCP internally creates a state with `exists w_value v_value, data_at(w_addr, w_value) * dlistrep_shape(w_value, 0) * data_at(v_addr, v_value) * dlistrep_shape(v_value, 0)`.
+3. The variable `t` is not mentioned, so its stack cell is dropped.
+4. In the loop body, `t = v->next` tries to assign to `t`, but `t`'s stack cell doesn't exist.
+
+The fix: I need to add `has_permission(&t)` to the invariant.
+
+Wait, but the SKILL.md says: "Do NOT add `has_permission` for: Freshly declared, uninitialized pointers that aren't yet accessed."
+
+But `t` IS accessed (assigned) in the loop body. The invariant replaces the state, and the new state doesn't include `t`'s stack cell. Let me verify: the error is "cannot find the program variable t(292) in assertion" — this means QCP can't find `t`'s binding `(&t == t_294_addr)` in the assertion state. The invariant only carries `(&v == v_297_addr) && (&w == w_291_addr)` — no `t` binding.
+
+So I need `has_permission(&t)` to carry `t`'s stack cell into the invariant.
+
+Let me also think about `p` and `q`. They're function parameters, and `q` is dereferenced in the loop body (`q@pre->prev` and `q@pre->next` in the RP). Actually wait, `p` and `q` are parameters, and in the loop body we don't directly access them. The loop uses `w` and `v`, which hold copies of `p` and `q`. But `q@pre` is accessed indirectly through `w->prev = v` when `w` points to `q@pre`.
+
+Actually, looking at the error more carefully: it says `t(292)` is missing. So `t`'s stack binding is missing. Let me add `has_permission(&t)`.
+
+But wait, looking at the invariant that QCP generated internally:
+```
+exists v_302_value w_303_value,
+v_297_addr w_291_addr,
+(&v == v_297_addr) &&
+(&w == w_291_addr) &&
+data_at(w_291_addr, struct list*, w_303_value) *
+dlistrep_shape(w_303_value, 0) *
+data_at(v_297_addr, struct list*, v_302_value) *
+dlistrep_shape(v_302_value, 0)
+```
+
+There's no `(&t == t_294_addr)` or `has_permission(&t)`. I need to add this.
+
+The invariant should be:
+```
+dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)
+```
+
+Let me fix and retry.
+
+[TEXT]
+The error is `fatal error: cannot find the program variable t(292) in assertion`. The `/*@ Inv Assert */` replaced the entire state, dropping `t`'s stack cell. The loop body assigns to `t`, so I need `has_permission(&t)` in the invariant. Let me fix and retry.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c
+
+============================================================
+[THINKING] (35 chars)
+============================================================
+Now let me rerun symexec to verify.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (65 chars)
+============================================================
+Let me check the end of the log to see if it succeeded or failed.
+
+[TOOL: Bash]
+Bash: tail -3 /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (116 chars)
+============================================================
+The tail doesn't show "Successfully finished symbolic execution". Let me search for success/fatal error by grepping.
+
+[TOOL: Bash]
+Bash: grep -E "fatal error|Successfully finished" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (412 chars)
+============================================================
+There's a fatal error at line 22:8. Let me check what's on line 22 in the inv file. Line 22 would be `w-> prev = v;` (line 18 is `/* INFILL */`, then 19 `while (v) {`, 20 `t = v -> next;`, 21 `v-> next = w;`, 22 `w-> prev = v;`).
+
+So the error is at `w->prev = v`. This is an "Assign Exec fail", which likely means QCP can't find permission to write to `w->prev`.
+
+Let me grep for more context around this error.
+
+[TOOL: Bash]
+Bash: grep -B5 "fatal error" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log | head -20
+
+============================================================
+[THINKING] (1485 chars)
+============================================================
+The error is "Assign Exec fail" at line 22 (`w->prev = v`). After applying strategy rule 14, the state has `undef_data_at(&(w_303_value->prev), struct list*)`, which is an undefined value for `w->prev`. It seems like the strategy tried to find `data_at` for `w->prev` but found nothing, so it produced `undef_data_at` which then caused the assign to fail.
+
+The problem is that `dlistrep_shape(w, 0)` is folded at the invariant level. When strategies try to unfold it to find `data_at` for `w->prev`, they might not be unfolding it. The issue is specifically about finding `data_at(&(w_303_value->prev), ...)`.
+
+Actually, wait. The internal representation shows `w_303_value` (the existential), not the program variable `w`. QCP created `exists v_302_value w_303_value` and `dlistrep_shape(w_303_value, 0)`. But the field expression `w->prev` resolves to `w_303_value->prev` (since `w`'s value is `w_303_value`).
+
+The strategy needs to unfold `dlistrep_shape(w_303_value, 0)` to expose `w_303_value->prev`. But rule 14 (from common.strategies) produced `undef_data_at` instead of a proper `data_at`. This might be because the strategy doesn't know that `w_303_value != 0` is needed to unfold the predicate.
+
+The fix: add `w != 0` to the invariant's PROP. This tells strategies that `w` is non-null, allowing them to unfold `dlistrep_shape(w, 0)` and produce `data_at(&(w->prev), ...)`.
+
+Let me also check the full log for the specific goal that was being solved when the error occurred.
+
+[TEXT]
+The error is at `w->prev = v` — QCP can't find permission for `w->prev`. The strategy produced `undef_data_at` for `w->prev` instead of a proper `data_at`. This happens because strategies need `w != 0` to trigger unfold of `dlistrep_shape(w, 0)`. Let me add `w != 0` to the PROP.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c', 'old_string': '      /*@ Inv Assert dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t) */', 'new_string': '      /*@ 
+
+============================================================
+[THINKING] (479 chars)
+============================================================
+Wait, I need to validate that `w != 0` holds in all RPs:
+- RP_pre_loop: w = q@pre, q@pre != 0 → w != 0 ✓
+- RP_iter_2: w = p@pre, p@pre != 0 → w != 0 ✓
+- RP_iter_3: w = y_303, y_303 != 0 → w != 0 ✓
+
+Yes, `w != 0` is true in all RPs.
+
+But wait, I need to verify: at the loop head for preservation, `w` is known to be non-null? After the loop body executes, new w = old v (which was non-null since we entered the loop body). So yes, w is always non-null.
+
+Let me rerun verification.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (24 chars)
+============================================================
+Let me check the result.
+
+[TOOL: Bash]
+Bash: grep -E "fatal error|Successfully finished" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (68 chars)
+============================================================
+Symexec passed. Now I need to check the proof_manual.v for Admitted.
+
+[TEXT]
+Symexec passed. Now check for admitted proofs.
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (51 chars)
+============================================================
+1 admitted. Let me check which witness is admitted.
+
+[TEXT]
+One admitted proof. Let me identify which witness.
+
+[TOOL: Bash]
+Bash: grep "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (73 chars)
+============================================================
+Let me get more context around the Admitted to identify the witness name.
+
+[TOOL: Bash]
+Bash: grep -B5 "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (5106 chars)
+============================================================
+It's `entail_wit_1` — the entry check. The invariant must be provable from the pre-loop state. Let me trace through to see what the issue might be.
+
+The pre-loop state has:
+- `q@pre != 0` (from the `if (w)` branch)
+- `v = p@pre`, `w = q@pre`
+- Stack bindings for all variables
+- `dlistrep_shape(p@pre, 0) * dlistrep_shape(q@pre, 0)`
+
+The invariant is: `w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)`
+
+With `w = q@pre` and `v = p@pre`, this becomes:
+`q@pre != 0 && dlistrep_shape(q@pre, 0) * dlistrep_shape(p@pre, 0) * has_permission(&t)`
+
+From the pre-loop state, we have:
+- `q@pre != 0` (from the if-branch)
+- `dlistrep_shape(p@pre, 0)` (from precondition)
+- `dlistrep_shape(q@pre, 0)` (from precondition)
+- `undef_data_at(t_294_addr, struct list*)` (t's uninitialized stack cell)
+
+So the invariant should be provable from the pre-loop state. Let me think about what might be going wrong.
+
+One issue: the pre-loop state has `data_at(v_297_addr, struct list*, p@pre)`, `data_at(w_291_addr, struct list*, q@pre)`, and the parameter stack cells. The invariant's internal form would have `data_at(w_291_addr, struct list*, w_value) * dlistrep_shape(w_value, 0) * data_at(v_297_addr, struct list*, v_value) * dlistrep_shape(v_value, 0) * has_permission(&t)`.
+
+To prove the invariant from the pre-loop state, QCP needs to:
+1. Unify `w_value = q@pre` and `v_value = p@pre` — the stack cells have these values
+2. Match `dlistrep_shape(q@pre, 0)` and `dlistrep_shape(p@pre, 0)` with the invariant's shapes
+3. Match `has_permission(&t)` with `undef_data_at(t_294_addr, struct list*)`
+
+Step 3 might be the issue. `has_permission(&t)` in the invariant might be interpreted differently from `undef_data_at(t_294_addr, ...)` in the pre-loop state.
+
+Wait, let me look at the symexec output more carefully for the entry entailment check. Let me grep for more info.
+
+Actually, let me check if the problem is that the invariant enters the `&&` format vs space-separated format. In QCP, `/*@ Inv Assert w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t) */` — is `&&` the right separator for PROP + SEP?
+
+Looking at SKILL.md:
+```
+Overall form: PROP1 && PROP2 && ... && SEP1 * SEP2 * ...
+```
+
+So `w != 0` is a PROP, and `dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)` is SEP. The format `PROP && SEP` seems correct.
+
+But wait, let me reconsider. The entail_wit_1 is about loop entry. The pre-loop state includes `w = q, v = p` assignments. The invariant uses `w` and `v` directly. QCP should be able to match `dlistrep_shape(q@pre, 0)` from the pre state with `dlistrep_shape(w, 0)` from the invariant (since w = q@pre).
+
+Hmm, let me think about another issue. Maybe the issue is with `p` and `q` parameters. The pre-loop state also has `data_at(q_280_addr, struct list*, q@pre)` and `data_at(p_283_addr, struct list*, p@pre)` — these are the parameter stack cells. But the invariant doesn't include them. When the invariant replaces the state, these are dropped. This might be fine for the invariant itself, but could be an issue with `entail_wit_1` if the pre-state-to-invariant entailment requires carrying the parameter stack cells.
+
+Actually, for entry entailment (`entail_wit_1`), the pre-state must entail the invariant. If the pre-state has stuff the invariant doesn't need, that's fine — the invariant can drop frames. The issue would be if the pre-state doesn't have something the invariant requires.
+
+Hmm, let me look at this from a different angle. Let me check the symexec output more carefully for the entry entailment. The issue might be with `w != 0` PROP. In the pre-loop state (after `if (w)` branch), we have `q@pre != 0` and `w = q@pre`. But QCP might not automatically substitute `w` with `q@pre` to derive `w != 0`.
+
+Actually, in QCP's internal representation, the invariant would become something like:
+```
+exists w_value v_value,
+data_at(w_291_addr, struct list*, w_value) * dlistrep_shape(w_value, 0) *
+data_at(v_297_addr, struct list*, v_value) * dlistrep_shape(v_value, 0) *
+has_permission(&t)  &&  w_value != 0
+```
+
+Wait, QCP represents variables internally through their stack cells. So `w` is `w_291_addr`, and its value is some existential `w_value`. `w != 0` becomes `w_value != 0`.
+
+In the pre-state, we have `data_at(w_291_addr, struct list*, q@pre)` and `q@pre != 0`. So `w_value = q@pre` and `q@pre != 0`, thus `w_value != 0`. This should be derivable.
+
+But wait, is the PROP constraint just `w != 0` or does it need to be `w_value != 0`? In the C-level invariant, it's `w != 0`. QCP will translate this to `w_value != 0` internally.
+
+Actually, I wonder if the issue is the format of PROP. Maybe it should be separate from SEP with a comma or something. Let me check how QCP handles `&&` in the invariant.
+
+Actually, looking at the error: the symexec passed (no fatal error), it's the Coq proof that's admitted. This means symexec accepted the invariant but couldn't auto-prove the Coq obligations. Let me look more carefully at what the entail_wit_1 looks like.
+
+Let me search for the entail_wit_1 in the verify log.
+
+[TEXT]
+Let me search the verify log for the entailment check to understand the issue.
+
+[TOOL: Bash]
+Bash: grep -E "entail_wit_1|entail_wit" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log | head -20
+
+============================================================
+[THINKING] (111 chars)
+============================================================
+No output about entail_wit in the log. Let me check the goal file to see what the entail_wit_1 goal looks like.
+
+[TOOL: Bash]
+Bash: grep "entail_wit" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v | head -10
+
+============================================================
+[THINKING] (395 chars)
+============================================================
+So we have 3 entailment witnesses: `entail_wit_1`, `entail_wit_2_1`, `entail_wit_2_2`. The goal file has them as axioms, and the proof_manual file has them as proof obligations. The proof_manual has Admitted for `entail_wit_1`, and auto-managed for the others?
+
+Wait, let me check: the proof_manual has `Admitted` only on line that says `Proof. Admitted.`. Let me check how many total there are.
+
+[TOOL: Bash]
+Bash: grep -c "Lemma\|Axiom" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v && echo "---" && grep -c "Proof.*Admitted" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (45 chars)
+============================================================
+2 lemmas, 1 admitted. Let me see both lemmas.
+
+[TOOL: Bash]
+Bash: grep -A2 "Lemma\|Axiom" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (381 chars)
+============================================================
+Only one lemma: `proof_of_rev_append_entail_wit_1`. And it's admitted. So the issue is only with the entry check.
+
+The fact that `entail_wit_2_1` and `entail_wit_2_2` are NOT in manual means they were auto-proved. So the preservation check passed. The issue is only with the initial entry into the loop.
+
+Let me look at the goal definition to understand what entail_wit_1 requires.
+
+[TOOL: Bash]
+Bash: grep -A30 "Definition rev_append_entail_wit_1 :=" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v | head -40
+
+============================================================
+[THINKING] (17417 chars)
+============================================================
+Now I can see the goal:
+
+**entail_wit_1** (entry check):
+```
+Pre-state:
+  q_pre <> 0  &&
+  (&"q" |-> q_pre) ** (&"p" |-> p_pre) ** dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)
+|--
+Post-state (invariant):
+  q_pre <> 0  &&
+  dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)
+```
+
+The pre-state has `(&"q" |-> q_pre) ** (&"p" |-> p_pre)` (parameter stack cells) and the invariant doesn't have them. Actually wait, the invariant should also have `has_permission(&t)` in SEP.
+
+Looking at the goal: the post-state (invariant) is `q_pre <> 0 && dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)`. No `has_permission(&t)` and no stack cells for `w` and `v`.
+
+Wait, where are `w` and `v` in the invariant? In the goal, the invariant only has `dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)`. But I wrote `dlistrep_shape(w, 0) * dlistrep_shape(v, 0)`.
+
+Looking at the pre-state: it has `q_pre, p_pre` as the actual values. And `w = q` and `v = p` in the code. So QCP substituted: `dlistrep_shape(w, 0)` → `dlistrep_shape(q_pre, 0)` (since w = q_pre), and `dlistrep_shape(v, 0)` → `dlistrep_shape(p_pre, 0)` (since v = p_pre).
+
+But the invariant also has `has_permission(&t)`. Where is it in the post-state? Let me look again... it's NOT in the goal! The goal's post-state is ONLY:
+```
+q_pre <> 0 && dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)
+```
+
+This means QCP either:
+1. Didn't include `has_permission(&t)` in the invariant
+2. Or the goal doesn't show it because it's automatically handled
+
+Wait, QCP generated the goal file, and the goal shows the invariant that it extracted. If `has_permission(&t)` isn't shown, it might mean QCP didn't parse it from the invariant annotation.
+
+But earlier, the symexec passed with no fatal errors. And the `has_permission(&t)` DID fix the "cannot find program variable t" error. So it's being parsed.
+
+Hmm, but look at the goal format more carefully. The goal's post-state is `&&` separated from the `**` portion. The format seems to be: `PROP ** SEP` where the `&&` separates PROP from SEP. But in the goal, the PROP `q_pre <> 0` is NOT connected to SEP with `&&`. It uses the `&&  ... ** ...` format.
+
+Wait, actually, looking more carefully:
+```
+  [| (q_pre <> 0) |]
+  &&  (dlistrep_shape q_pre 0 )
+  **  (dlistrep_shape p_pre 0 )
+```
+
+The `[| ... |]` is the Coq encoding of PROP, `dlistrep_shape ...` is SEP, and `**` is the separating conjunction in SEP. The `&&` seems to be the PROP-space conjunction separating it from SEP.
+
+But there's NO `((& "t") # Ptr |->_ )` or similar in the post-state. So `has_permission(&t)` is missing from the goal. But the goal was generated by symexec, which DID parse the invariant correctly...
+
+Wait, maybe `has_permission(&t)` is represented differently. Let me look at entail_wit_2_1 for comparison:
+```
+Pre-state:
+  w <> 0 && v <> 0 && y = 0
+  && (&(w->prev) |-> v) ** dlistrep_shape(y_2, w) ** (&(w->next) |-> y_2) ** (&(v->next) |-> w) ** dlistrep_shape(y, v) ** (&(v->prev) |-> 0) ** ((&"t") |-> y)
+|--
+Post-state (invariant):
+  v <> 0
+  && dlistrep_shape(v, 0) ** dlistrep_shape(y, 0) ** ((&"t") |->_)
+```
+
+So in entail_wit_2_1, the post-state (invariant) DOES have `((&"t") |->_ )` — that's `has_permission(&t)`! But in entail_wit_1, it's missing.
+
+Why? Let me re-read the goal for entail_wit_1:
+```
+Post-state:
+  [| (q_pre <> 0) |]
+  &&  (dlistrep_shape q_pre 0 )
+  **  (dlistrep_shape p_pre 0 )
+```
+
+No `((&"t") |->_ )`. Hmm, that's interesting. Maybe the goal is saying that from the pre-state, we need to prove:
+`dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)`
+
+But the invariant includes `has_permission(&t)`. Maybe QCP split the entailment into two goals? Let me check if there's a separate goal for `has_permission(&t)`.
+
+Wait, let me re-examine. The pre-state of entail_wit_1 doesn't have `t`'s stack cell either. So maybe QCP doesn't include `has_permission(&t)` in entail_wit_1 because `t` doesn't exist in the pre-state at that point.
+
+Actually no, looking at the pre-state more carefully:
+```
+Pre-state:
+  q_pre <> 0 &&
+  (&"q" |-> q_pre) ** (&"p" |-> p_pre) ** dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)
+```
+
+There's no `(&"t" |-> ...)` in the pre-state. But in the actual program execution, before the loop, `t` was declared as `struct list *t` and has `undef_data_at(t_294_addr, ...)`. The pre-state in the goal doesn't include this.
+
+Hmm, I think the issue might be that `entail_wit_1` is specifically about the predicate entailment, and QCP separates the stack-cell management from the predicate entailment. The pre-state in the goal includes the `q_pre` and `p_pre` (which are the actual values), but not the stack cells for local variables.
+
+Wait, actually, `(&"q" |-> q_pre)` IS a stack cell for `q`. But it has a defined value. Local variables like `w`, `v`, `t` are handled differently...
+
+Actually, I think the issue might be different. Let me look at this from the Coq proof perspective. The pre-state is:
+```
+q_pre, p_pre: Z
+[| q_pre <> 0 |]
+&& (&"q" |-> q_pre) ** (&"p" |-> p_pre) ** dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)
+```
+
+And the post-state (invariant) is:
+```
+[| q_pre <> 0 |]
+&& dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)
+```
+
+We need to prove: pre-state |-- post-state.
+
+The pre-state has `(&"q" |-> q_pre) ** (&"p" |-> p_pre)` extra, and the post-state doesn't have them. In separation logic, `A ** B |-- A` holds (we can drop frames). So `dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0) |-- dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)` should hold (just reordering).
+
+Wait, actually `A ** B |-- A` is NOT valid in separation logic unless `B` is `emp`. We can't just drop spatial resources. Oh wait, that IS valid if we're using the `frame` rule: the post-condition doesn't need to consume all resources.
+
+Hmm, actually in separation logic, `P * Q |-- P` is only valid if `Q` is `emp`. In linear separation logic, resources can't be dropped. However, in QCP, the entailment might use some form of affine logic where resources CAN be dropped.
+
+Actually wait, looking at the entail_wit_2_1 more carefully:
+```
+Pre-state: [| (w <> 0) |] && [| (v <> 0) |] && [| (y = 0) |] && (&(w->prev) |-> v) ** dlistrep_shape(y_2, w) ** (&(w->next) |-> y_2) ** (&(v->next) |-> w) ** dlistrep_shape(y, v) ** (&(v->prev) |-> 0) ** ((&"t") |-> y)
+|--
+Post-state: [| (v <> 0) |] && dlistrep_shape(v, 0) ** dlistrep_shape(y, 0) ** ((&"t") |->_)
+```
+
+The pre-state has many data_at items that the post-state doesn't directly match. The entailment requires strategies to fold the data_at items into dlistrep_shape predicates. This is a more complex proof.
+
+For entail_wit_1, the missing `(&"t" |->_ )` in the post-state might be the problem. If the invariant has `has_permission(&t)`, the post-state should include `((&"t") |->_ )`. But it doesn't in the goal!
+
+Why? Maybe QCP's invariant parsing has an issue with `has_permission` at the entry point. Or maybe the entry state doesn't have `t`'s stack cell (it's "above" the invariant check point).
+
+Actually, wait. Looking at the actual program:
+```c
+struct list *w, *t, *v;
+w = q;
+v = p;
+if (w) {
+    /*@ Inv Assert ... */
+    while (v) { ... }
+}
+```
+
+At the point of the invariant, `t` has been declared and has `undef_data_at(t_294_addr, ...)`. The invariant check at entry should verify that the current state at that point entails the invariant. The current state includes `t`'s stack cell.
+
+But the goal doesn't show `t`'s stack cell in either the pre-state or post-state. This suggests QCP removed it from both sides, meaning it's not relevant to the entailment check. But then `has_permission(&t)` should also be removed from the invariant...
+
+OK, I think I need to look at this differently. Let me see what the actual problem is. The entail_wit_1 goal is:
+```
+Pre: q_pre <> 0 && (&"q" |-> q_pre) ** (&"p" |-> p_pre) ** dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)
+Post: q_pre <> 0 && dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)
+```
+
+The post-state needs to be proven from the pre-state. The pre-state has extra `(&"q" |-> q_pre) ** (&"p" |-> p_pre)`. But in separation logic, we can't just drop them.
+
+Wait, actually in QCP's entailment, there might be a rule that allows dropping stack cells. Let me check:
+- The pre-state has `p` and `q` parameter stack cells
+- After the invariant is applied, the loop body doesn't directly access `p` or `q` — it uses `w` and `v`
+- But the invariant doesn't carry `p` or `q`'s stack cells
+
+Hmm, but the invariant doesn't need `p` and `q`. The question is whether the entry entailment requires the pre-state to match exactly.
+
+Actually, let me re-read the goal format:
+```
+forall (q_pre: Z) (p_pre: Z),
+  [| (q_pre <> 0) |]
+  &&  ((( &( "q" ) )) # Ptr  |-> q_pre)
+  **  ((( &( "p" ) )) # Ptr  |-> p_pre)
+  **  (dlistrep_shape p_pre 0 )
+  **  (dlistrep_shape q_pre 0 )
+|--
+  [| (q_pre <> 0) |]
+  &&  (dlistrep_shape q_pre 0 )
+  **  (dlistrep_shape p_pre 0 )
+```
+
+The notation `A ** B |-- C` in this QCP context is the magic wand (`-*`) or entailment (`|--`). For resources, `A ** B |-- B` should work if the logic is affine. But in standard separation logic (linear), this doesn't hold.
+
+Looking at it from another angle: the pre-state also has `(&"p" |-> p_pre)` and `(&"q" |-> q_pre)`. These are stack cells that must be consumed. But the post-state (invariant) doesn't have them. Can they be dropped?
+
+In QCP's model, stack cells (data_at with Ptr type) might be treated differently from heap cells. Let me think...
+
+Actually, I think the issue might be that the pre-state has `dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)` and the post-state has `dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)`. These should match (commutativity of `**`). The extra stack cells should be droppable if QCP uses affine separation logic.
+
+But the proof is admitted, meaning Coq can't prove it. Let me try a different approach: maybe I need to carry `p` and `q` in the invariant.
+
+Wait, the invariant is `w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)`. This is checked at loop entry and preservation. At entry, `w = q` and `v = p`, so the invariant becomes `q != 0 && dlistrep_shape(q, 0) * dlistrep_shape(p, 0) * has_permission(&t)`.
+
+The entry state at that point is:
+```
+q@pre != 0
+data_at(v_297_addr, struct list*, p@pre)
+undef_data_at(t_294_addr, struct list*)
+data_at(w_291_addr, struct list*, q@pre)
+data_at(q_280_addr, struct list*, q@pre)
+data_at(p_283_addr, struct list*, p@pre)
+dlistrep_shape(p@pre, 0)
+dlistrep_shape(q@pre, 0)
+```
+
+The invariant (internal form):
+```
+exists w_value, v_value,
+w_value != 0 &&
+data_at(w_291_addr, struct list*, w_value) * dlistrep_shape(w_value, 0) *
+data_at(v_297_addr, struct list*, v_value) * dlistrep_shape(v_value, 0) *
+has_permission(&t)
+```
+
+To prove the entailment:
+1. `w_value = q@pre`, `v_value = p@pre` from data_at matching
+2. `dlistrep_shape(q@pre, 0)` matches
+3. `dlistrep_shape(p@pre, 0)` matches
+4. `has_permission(&t)` matches `undef_data_at(t_294_addr, ...)`
+5. `w_value != 0` derives from `q@pre != 0` and `w_value = q@pre`
+6. Extra stack cells `data_at(q_280_addr, ...)` and `data_at(p_283_addr, ...)` — droppable?
+
+The last point might be the issue. In the goal, the pre-state includes `(&"q" |-> q_pre) ** (&"p" |-> p_pre)` but the invariant doesn't have them. If QCP can't drop these, the entailment fails.
+
+Actually, looking at the goal again: the pre-state is `(&"q" |-> q_pre) ** (&"p" |-> p_pre) ** dlistrep_shape(p_pre, 0) ** dlistrep_shape(q_pre, 0)`. The invariant is `dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)`.
+
+For this to work, QCP needs to drop `(&"q" |-> q_pre) ** (&"p" |-> p_pre)`. If the logic is affine, this should work. But Admitted suggests it doesn't.
+
+Wait, maybe I should look at this the other way. Perhaps the invariant should carry `p` and `q` parameters explicitly. Let me try adding PROP equalities: `w == q` and `v == p`... but no, those would be wrong because in later iterations, `w` and `v` change.
+
+Hmm, actually, looking at the SKILL.md fix strategy 3:
+"3. **Carry frame items with PROP equalities**: If `return_wit` or `entail_wit_1` admits and the invariant does not obviously lack a shape predicate, check whether the pre-loop state has stack bindings or With-clause relationships that were dropped by `Inv Assert` replacement. Use equalities in PROP to carry them: `param == param@pre` keeps a parameter's stack cell in scope; `*param == <with_var>` preserves the binding between a dereferenced value and its With-clause variable."
+
+This is exactly the situation: `entail_wit_1` is admitted, and the pre-loop state has parameter stack cells (`p` and `q`) that are dropped by the invariant. The fix is to carry them with PROP equalities.
+
+But wait, I need to be careful here. The suggestion is `param == param@pre` for parameters. But `p` and `q` are not modified in the function body — they keep their original values. So `p == p@pre` and `q == q@pre` would be true.
+
+Hmm, but do I need both? Let me think about what's actually needed. The invariant is at the loop head. The pre-loop state carries stack cells for `p`, `q`, `w`, `v`, `t`. After the invariant replaces the state, `p` and `q` are dropped. If the loop body doesn't access `p` or `q`, this should be fine.
+
+Wait, actually `p` and `q` ARE accessed indirectly. In the first iteration, `v = p@pre`, so `v->next` accesses `p->next`. This is covered by `dlistrep_shape(v, 0)` in the invariant (which unfolds to `dlistrep_shape(p@pre, 0)` at entry). So `p`'s stack cell isn't needed — only its value matters.
+
+For `q`, the loop body accesses `q->prev` through `w->prev`. At entry, `w = q`, so `w->prev = q->prev`. Again, this is covered by `dlistrep_shape(w, 0)`.
+
+So I don't think `p` and `q` stack cells are needed in the invariant. The invariant only needs the shape predicates and `t`'s permission.
+
+Let me look at this from yet another angle. Maybe the issue is that the invariant's PROP constraint `w != 0` becomes `q_pre <> 0` in the goal, but the pre-state also has `q_pre <> 0`. The Coq proof should be able to derive this. What if the issue is that `q_pre` is the value of `w` at entry, but the invariant's internal representation uses a fresh existential for `w`'s value?
+
+Actually, I think the real issue is the stack cells for `p` and `q` that can't be dropped. Let me try carrying them with `has_permission`. Or better yet, let me try a different approach:
+
+Looking at fix strategy 3: "Use equalities in PROP to carry them: `param == param@pre`"
+
+The invariant could be:
+```
+w != 0 && q == q@pre && p == p@pre && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)
+```
+
+`q == q@pre` and `p == p@pre` are always true since `q` and `p` are never modified. This would carry their stack cells through the invariant.
+
+Actually wait, I need to think about this more carefully. The `@pre` notation refers to the value at function entry. If we add `q == q@pre` and `p == p@pre` to the invariant, these are true at loop entry (q is the same) and also true at loop preservation (q is still the same, since q is never modified).
+
+Let me try this fix. The new invariant:
+```
+w != 0 && q == q@pre && p == p@pre && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)
+```
+
+But wait, I need to validate: are `q == q@pre` and `p == p@pre` true in ALL RPs?
+- RP_pre_loop: q = q@pre, p = p@pre. ✓
+- RP_iter_2: q = q@pre, p = p@pre. ✓
+- RP_iter_3: q = q@pre, p = p@pre. ✓
+
+Yes, they're always true because `p` and `q` are never modified in the function body.
+
+But adding these equalities might cause issues elsewhere. Actually, `q == q@pre` and `p == p@pre` are C expressions that reference `q` and `p` directly. QCP might create `data_at` for `q` and `p` stack cells when parsing these. But since these are just stack cells (not heap fields), they shouldn't cause `dup_data_at` issues.
+
+Let me try this approach.
+
+Actually, wait. I'm not sure `@pre` can be used in invariants. It's typically used in pre/post conditions. Let me think of another way to carry `p` and `q`.
+
+Alternative: add `has_permission(&p) * has_permission(&q)` to the SEP. This would carry `p` and `q` stack cells through the invariant without any constraint on their values.
+
+But looking at the SKILL.md:
+"**`has_permission` checklist**: Add `has_permission(&var)` when the loop body operates on a pointer (dereference, field access, assignment through it) but that pointer is not already covered by a spatial predicate."
+
+`p` and `q` are NOT dereferenced in the loop body (the loop uses `w` and `v`). So they shouldn't need `has_permission`. But perhaps I need `has_permission` for them anyway to carry their stack cells through the invariant, even though they're not directly used.
+
+Hmm, let me try the PROP equality approach first. Let me add `q == q@pre && p == p@pre` to the PROP:
+
+```
+w != 0 && q == q@pre && p == p@pre && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)
+```
+
+Wait, can you use `@pre` in invariants? Let me think... According to SKILL.md, `@pre` is used in PROP constraints. The invariant uses the same notation as the assertions. Let me check if there's any example in SKILL.md of using `@pre` in invariants.
+
+The SKILL.md fix strategy 3 says: "Use equalities in PROP to carry them: `param == param@pre` keeps a parameter's stack cell in scope"
+
+So yes, `param == param@pre` should work. Let me try it.
+
+[TEXT]
+The `entail_wit_1` (entry check) is admitted. The goal shows the invariant is `q_pre <> 0 && dlistrep_shape(q_pre, 0) ** dlistrep_shape(p_pre, 0)` — note the parameter stack cells `(&"q" |-> q_pre) ** (&"p" |-> p_pre)` are in the pre-state but missing from the invariant, causing the drop of `p` and `q` stack cells. Per fix strategy 3, I need to carry them with PROP equalities: `q == q@pre` and `p == p@pre`.
+
+[TOOL: Edit]
+Edit: {'replace_all': False, 'file_path': '/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c', 'old_string': '      /*@ Inv Assert w != 0 && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t) */', 'new_string': '
+
+============================================================
+[THINKING] (744 chars)
+============================================================
+Wait, I just realized - I should also validate that `q == q@pre` and `p == p@pre` are valid in all RPs. Let me check the RPs:
+
+- RP_pre_loop: `q@pre != 0`, `v = p@pre`, `w = q@pre`. q and p are params. In RP_pre_loop, there's `data_at(q_280_addr, struct list*, q@pre)` and `data_at(p_283_addr, struct list*, p@pre)`. So `q == q@pre` and `p == p@pre` hold. ✓
+- RP_iter_2: `q@pre != 0`, `p@pre != 0`. The LOCAL has `(&q == q_280_addr)` and `(&p == p_283_addr)`. The SEP has `data_at(q_280_addr, struct list*, q@pre)` and `data_at(p_283_addr, struct list*, p@pre)`. So yes, `q`'s value is `q@pre` and `p`'s value is `p@pre`. ✓
+- RP_iter_3: Same pattern. ✓
+
+Great, `q == q@pre` and `p == p@pre` are valid in all RPs.
+
+Now let me rerun verification.
+
+[TOOL: Bash]
+Bash: rm -f /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v && /home/tzh66/loop-invariant-inference/scripts/symexec \
+  --goal-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_goal.v \
+  --proof-auto-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_auto.v \
+  --proof-manual-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v \
+  --coq-logic-path=SimpleC.EE.infra.dll_nodata_shape_lib \
+  -slp /home/tzh66/loop-invariant-inference/scripts/infra/ SimpleC.EE.infra \
+  --input-file=/home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c \
+  --basic-assertion --primary-assertion \
+  2>&1 | tee /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (24 chars)
+============================================================
+Let me check the result.
+
+[TOOL: Bash]
+Bash: grep -E "fatal error|Successfully finished" /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_verify.log
+
+============================================================
+[THINKING] (35 chars)
+============================================================
+Symexec passed. Now check Admitted.
+
+[TOOL: Bash]
+Bash: grep -c "Admitted\." /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_proof_manual.v
+
+============================================================
+[THINKING] (61 chars)
+============================================================
+0 Admitted! QCP_VERIFIED: YES!
+
+Let me now output the result.
+
+[TEXT]
+Zero admitted proofs -- `QCP_VERIFIED: YES`. Let me now write the result file.
+
+[TOOL: Read]
+Read: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/tmp/rev_append_inv.c
+
+============================================================
+[THINKING] (73 chars)
+============================================================
+Great, the invariant is verified. Let me write the final result.txt file.
+
+[TOOL: Write]
+Write: /home/tzh66/loop-invariant-inference/test_results_20260524_123050/System/GlibC/changed_codes/list/rev_append/result.txt
+
+============================================================
+[THINKING] (53 chars)
+============================================================
+The task is complete. Let me summarize what was done.
+
+[TEXT]
+**QCP_VERIFIED: YES** (on the second attempt after symexec passed).
+
+## Summary
+
+**File**: `/home/tzh66/loop-invariant-inference/dataset_qcp_infill/System/GlibC/changed_codes/list/rev_append/rev_append.c`
+
+**Function**: `rev_append(struct list *p, struct list *q)` -- reverses list `p` and appends it to list `q`. The loop inside `if (w)` takes nodes from `v` (starting at `p`) and prepends them to `w` (starting at `q`).
+
+**RP analysis** (3 recording points from symexec): The diff across `RP_pre_loop`, `RP_iter_2`, `RP_iter_3` consistently showed both `w` and `v` pointing to proper DLLs with `prev=0`. The invariant is simply: both lists are valid `dlistrep_shape` predicates.
+
+**Inferred invariant**: `w != 0 && q == q@pre && p == p@pre && dlistrep_shape(w, 0) * dlistrep_shape(v, 0) * has_permission(&t)`
+
+- **SEP**: `dlistrep_shape(w, 0)` (processed prefix + q) and `dlistrep_shape(v, 0)` (remaining suffix of p)
+- **PROP**: `w != 0` (needed for strategy unfold of `w->prev`), `q == q@pre && p == p@pre` (carry parameter stack cells per fix strategy 3 to resolve `entail_wit_1`)
+- **has_permission(&t)**: needed because `t` is assigned in the loop body but not covered by any shape predicate
+
+**Iterations**: The first attempt (`dlistrep_shape(w, 0) * dlistrep_shape(v, 0)` only) failed with "cannot find program variable t". Added `has_permission(&t)` -- symexec passed but had 1 `Admitted` (`entail_wit_1`). Added `q == q@pre && p == p@pre` to carry dropped parameter stack cells -- 0 Admitted.
